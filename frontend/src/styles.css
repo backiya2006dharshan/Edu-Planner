@@ -1,0 +1,371 @@
+:root {
+  color-scheme: dark;
+  font-family: "Aptos", "Segoe UI", "Trebuchet MS", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #f4f7fb;
+  background:
+    radial-gradient(circle at top left, rgba(85, 160, 255, 0.28), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 140, 102, 0.16), transparent 22%),
+    linear-gradient(180deg, #08111f 0%, #0d1728 45%, #111a2e 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 92%);
+  pointer-events: none;
+}
+
+a {
+  color: inherit;
+}
+
+.shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 56px 0 64px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #92b7ff;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 16px;
+  font-size: clamp(2.6rem, 4vw, 4.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  max-width: 12ch;
+}
+
+.lead {
+  max-width: 58ch;
+  margin-bottom: 0;
+  color: rgba(233, 239, 249, 0.78);
+  font-size: 1.05rem;
+}
+
+.panel,
+.feature-card {
+  background: rgba(10, 18, 34, 0.72);
+  border: 1px solid rgba(166, 190, 255, 0.16);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(16px);
+}
+
+.panel {
+  border-radius: 28px;
+  padding: 24px;
+}
+
+.panel h2 {
+  margin-bottom: 20px;
+  font-size: 1.15rem;
+}
+
+.status-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.status-card {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.status-card--primary {
+  background: linear-gradient(135deg, rgba(84, 146, 255, 0.28), rgba(31, 45, 84, 0.45));
+}
+
+.status-label {
+  color: rgba(233, 239, 249, 0.62);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.status-text {
+  margin: 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.status-text--loading {
+  color: #bad3ff;
+}
+
+.status-text--error {
+  color: #ffb3b3;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.feature-card {
+  border-radius: 24px;
+  padding: 22px;
+}
+
+.feature-card h3 {
+  margin-bottom: 10px;
+}
+
+.feature-card p {
+  margin-bottom: 0;
+  color: rgba(233, 239, 249, 0.74);
+}
+
+.panel--curriculum {
+  margin-top: 24px;
+}
+
+.curriculum-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 18px;
+}
+
+.curriculum-column {
+  display: grid;
+  gap: 14px;
+}
+
+.curriculum-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.curriculum-block,
+.curriculum-child {
+  border: 1px solid rgba(166, 190, 255, 0.12);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.curriculum-child {
+  margin-top: 10px;
+}
+
+.curriculum-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.curriculum-header span {
+  color: rgba(233, 239, 249, 0.62);
+  font-size: 0.88rem;
+}
+
+.nested-list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.nested-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nested-item--inline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.inline-actions {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  color: #9ec0ff;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.auth-card h4 {
+  margin: 0;
+}
+
+.panel--auth {
+  margin-top: 24px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.panel--user {
+  margin-top: 20px;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.auth-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(166, 190, 255, 0.12);
+}
+
+.auth-card h2 {
+  margin-bottom: 4px;
+  font-size: 1.05rem;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  color: rgba(233, 239, 249, 0.7);
+  font-size: 0.9rem;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(166, 190, 255, 0.18);
+  background: rgba(6, 10, 18, 0.88);
+  color: #f4f7fb;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid rgba(146, 183, 255, 0.42);
+  outline-offset: 1px;
+}
+
+.auth-card button,
+.secondary-button {
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-card button {
+  background: linear-gradient(135deg, #6ea2ff, #3454ff);
+  color: #08111f;
+}
+
+.secondary-button {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f7fb;
+}
+
+@media (max-width: 920px) {
+  .hero,
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .curriculum-layout,
+  .curriculum-grid,
+  .auth-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-grid {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    max-width: none;
+  }
+
+  .panel-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    width: min(100% - 20px, 1180px);
+    padding: 24px 0 40px;
+  }
+
+  .panel,
+  .feature-card {
+    border-radius: 20px;
+  }
+}
