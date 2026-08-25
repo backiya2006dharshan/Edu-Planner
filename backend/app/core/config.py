@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     backend_port: int = 8000
     cors_origins: list[str] | str = Field(default_factory=lambda: ["http://localhost:5173"])
     database_url: str | None = None
+    chroma_path: str = "./.chroma"
 
     @field_validator("cors_origins", mode="before")
     @classmethod

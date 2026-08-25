@@ -40,6 +40,7 @@ async def init_db() -> None:
 
     def create_tables() -> None:
         from app.models import curriculum  # noqa: F401
+        from app.models import material  # noqa: F401
         from app.models import user  # noqa: F401
 
         Base.metadata.create_all(bind=engine)

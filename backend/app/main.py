@@ -7,6 +7,7 @@ from app.api.auth import register as auth_register
 from app.api.auth import router as auth_router
 from app.api.curriculum import router as curriculum_router
 from app.api.health import router as health_router
+from app.api.materials import router as material_router
 from app.core.config import get_settings
 from app.db.database import init_db
 
@@ -30,6 +31,8 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(curriculum_router)
+app.include_router(material_router)
+app.include_router(material_router, prefix="/api", include_in_schema=False)
 app.include_router(curriculum_router, prefix="/api", include_in_schema=False)
 
 from fastapi import status as _status

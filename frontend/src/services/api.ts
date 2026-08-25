@@ -12,6 +12,7 @@ import type {
 } from '../types/curriculum'
 import type { AuthResponse, LoginRequest, RegisterRequest, UserPublic } from '../types/auth'
 import type { HealthResponse } from '../types/health'
+import type { MaterialDocument, MaterialSearchRequest, MaterialSearchResponse } from '../types/materials'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
@@ -88,4 +89,36 @@ export async function createLearningObjective(token: string, payload: LearningOb
 
 export async function deleteLearningObjective(token: string, learningObjectiveId: number): Promise<void> {
   await withAuth(token, apiClient.delete(`/curriculum/learning-objectives/${learningObjectiveId}`, { headers: { Authorization: `Bearer ${token}` } }))
+}
+
+
+export async function fetchMaterialDocuments(
+  token: string,
+  filters?: { college?: string; semester?: string; regulation?: string },
+): Promise<MaterialDocument[]> {
+  return withAuth(
+    token,
+    apiClient.get<MaterialDocument[]>('/materials', {
+      params: filters,
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  )
+}
+
+export async function uploadMaterial(token: string, formData: FormData): Promise<MaterialDocument> {
+  return withAuth(
+    token,
+    apiClient.post<MaterialDocument>('/materials', formData, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+    }),
+  )
+}
+
+export async function searchMaterials(token: string, payload: MaterialSearchRequest): Promise<MaterialSearchResponse> {
+  return withAuth(
+    token,
+    apiClient.post<MaterialSearchResponse>('/materials/search', payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  )
 }

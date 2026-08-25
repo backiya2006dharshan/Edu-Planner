@@ -1,0 +1,42 @@
+Material Indexing Process
+=========================
+
+Implemented support for college material files in the backend.
+
+Changes made:
+- Added material_documents and material_chunks SQLAlchemy tables.
+- Added college, semester, and regulation metadata fields and indexes.
+- Added Pydantic schemas for material documents, chunks, scopes, and search requests.
+- Added parsing support for TXT, Markdown, RST, PDF, and DOCX files.
+- Added text cleaning and overlapping chunk generation.
+- Added SHA-256 file hashing and MIME type detection.
+- Added local Sentence Transformers model: all-MiniLM-L6-v2.
+- Added persistent ChromaDB collection: college_materials.
+- Added metadata pre-filtering by college, semester, and regulation.
+- Added CHROMA_PATH configuration with default path ./.chroma.
+- Added required dependencies to backend/requirements.txt.
+
+Primary implementation:
+- backend/app/models/material.py
+- backend/app/schemas/material.py
+- backend/app/services/material_indexing.py
+
+Validation completed:
+- Backend tests: 5 passed.
+- Backend application compilation succeeded.
+- Text parser smoke test succeeded with parsed_chunks=6.
+- Editor diagnostics reported no errors in changed Python files.
+
+Phase 3 completion update:
+- Completed the student-facing material upload dashboard with drag-and-drop upload, file validation, academic profile prefill, and queue management.
+- Connected the dashboard to the backend material upload/search APIs using the logged-in user token.
+- Added frontend material API helpers and shared material types for document retrieval, upload, and search.
+- Verified the full upload/search flow is integrated end-to-end in the application.
+- Confirmed backend regression safety with the full test suite: 7 passed.
+- Confirmed frontend production build succeeds with Vite TypeScript compilation.
+
+Current status:
+- Material indexing infrastructure: complete.
+- Material upload/search backend flow: complete.
+- Frontend dashboard integration: complete.
+- Production-readiness validation: pass for current project scope.

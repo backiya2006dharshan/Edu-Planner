@@ -54,6 +54,8 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
+Note: the base backend requirements install cleanly in this environment. The optional material-indexing libraries (`chromadb` and `sentence-transformers`) are intentionally left out of the default install because they require a full native C++/Windows SDK toolchain on Windows and can fail during build. Install them separately only in a correctly configured developer environment if you need the vector search features.
+
 ### Frontend
 
 ```powershell

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import CurriculumSection from './components/CurriculumSection'
+import MaterialUploadDashboard from './components/MaterialUploadDashboard'
 import { fetchCurrentUser, fetchHealth, loginUser, registerUser } from './services/api'
 import type { UserPublic } from './types/auth'
 import type { HealthResponse } from './types/health'
@@ -282,6 +283,7 @@ export default function App() {
         </div>
       </section>
 
+        {currentUser?.role === 'student' ? <MaterialUploadDashboard user={currentUser} token={authToken} /> : null}
         {currentUser ? <CurriculumSection token={authToken} role={currentUser.role} /> : null}
     </main>
   )
