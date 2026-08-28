@@ -8,6 +8,9 @@ from app.api.auth import router as auth_router
 from app.api.curriculum import router as curriculum_router
 from app.api.health import router as health_router
 from app.api.materials import router as material_router
+from app.api.assessment import router as assessment_router
+from app.api.ai import router as ai_router
+from app.api.learning_plan import router as learning_plan_router
 from app.core.config import get_settings
 from app.db.database import init_db
 
@@ -22,7 +25,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins or ["http://localhost:5173"],
+    allow_origins=settings.cors_origins or ["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,8 +35,14 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(curriculum_router)
 app.include_router(material_router)
+app.include_router(assessment_router)
+from app.api.ai import router as ai_router
+app.include_router(ai_router)
 app.include_router(material_router, prefix="/api", include_in_schema=False)
 app.include_router(curriculum_router, prefix="/api", include_in_schema=False)
+app.include_router(assessment_router, prefix="/api", include_in_schema=False)
+app.include_router(ai_router, prefix="/api", include_in_schema=False)
+app.include_router(learning_plan_router, prefix="/api", include_in_schema=False)
 
 from fastapi import status as _status
 

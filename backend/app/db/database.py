@@ -42,6 +42,8 @@ async def init_db() -> None:
         from app.models import curriculum  # noqa: F401
         from app.models import material  # noqa: F401
         from app.models import user  # noqa: F401
+        from app.models import assessment  # noqa: F401
+        from app.models import learning_plan  # noqa: F401
 
         Base.metadata.create_all(bind=engine)
 

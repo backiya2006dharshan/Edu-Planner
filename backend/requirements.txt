@@ -13,5 +13,7 @@ python-docx==1.1.2
 # Optional material-indexing dependencies. These are not required for the base API
 # and fail to build reliably in this Windows environment without a full C++/SDK toolchain.
 # Install them separately in a configured developer environment if you need vector search:
-# chromadb==0.5.23
-# sentence-transformers==3.3.1
+chromadb==0.5.23
+sentence-transformers==3.3.1
+langgraph>=0.1.19
+langchain-core>=0.2.20

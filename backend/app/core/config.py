@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     cors_origins: list[str] | str = Field(default_factory=lambda: ["http://localhost:5173"])
     database_url: str | None = None
     chroma_path: str = "./.chroma"
+    gemini_api_key: str | None = None
+    openrouter_api_key: str | None = None
+    gemini_model: str = "gemini-3.6-flash"
+    openrouter_model: str = "google/gemini-3.6-flash"
+    llm_timeout_seconds: int = 60
+    llm_max_retries: int = 3
+    langgraph_max_iterations: int = 15
 
     @field_validator("cors_origins", mode="before")
     @classmethod
