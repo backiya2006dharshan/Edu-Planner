@@ -17,3 +17,6 @@ class LearningPlanResponse(BaseModel):
     evaluator_feedback: str
     issues: list[str]
     iteration_count: int
+    skill_gaps: Optional[dict[str, Any]] = None
+    rag_retrieval_status: Optional[str] = None
+    rag_chunks_retrieved: Optional[int] = 0

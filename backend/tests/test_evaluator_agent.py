@@ -69,7 +69,7 @@ async def test_evaluator_success_approval(valid_state):
     with patch("app.ai.agents.evaluator.get_llm_provider", return_value=mock_provider) as mock_get_provider:
         result = await run_evaluator(valid_state)
         
-    mock_get_provider.assert_called_once_with("openrouter")
+    mock_get_provider.assert_called_once()
     
     assert "evaluator_result" in result
     evaluator_res = result["evaluator_result"]

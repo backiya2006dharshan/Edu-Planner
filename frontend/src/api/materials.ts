@@ -1,13 +1,25 @@
 import { apiClient } from './client';
 
+export interface MaterialChunk {
+  id: number;
+  chunk_index: number;
+  content: string;
+  page_number?: number;
+}
+
 export interface Material {
   id: number;
-  filename: string;
+  file_name: string;
   college: string;
   semester: string;
   regulation: string;
-  subject: string;
-  upload_date: string;
+  mime_type?: string | null;
+  chunk_count: number;
+  created_at: string;
+}
+
+export interface MaterialDetail extends Material {
+  chunks: MaterialChunk[];
 }
 
 export interface SearchMaterialsRequest {
@@ -19,6 +31,11 @@ export interface SearchMaterialsRequest {
 }
 
 export const materialsApi = {
+  getDetail: async (id: number): Promise<MaterialDetail> => {
+    const response = await apiClient.get<MaterialDetail>(`/materials/${id}`);
+    return response.data;
+  },
+
   list: async (college?: string, subject?: string): Promise<Material[]> => {
     const params = new URLSearchParams();
     if (college) params.append('college', college);

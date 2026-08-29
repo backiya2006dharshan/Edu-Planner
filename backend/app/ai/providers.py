@@ -60,7 +60,10 @@ class LLMProvider(ABC):
 
 
 class GeminiProvider(LLMProvider):
-    """Provider implementation for Google's Gemini API."""
+    """Provider implementation for Google's Gemini API.
+    
+    Used by: Analyst Agent (Generator role).
+    """
     
     def __init__(self):
         settings = get_settings()
@@ -77,7 +80,7 @@ class GeminiProvider(LLMProvider):
         
         text_content = prompt
         if system_prompt:
-            # Simple concatenation since v1beta structure for system instructions can be complex/changing
+            # Prepend system prompt as Gemini v1beta doesn't have a separate system role
             text_content = f"System: {system_prompt}\n\nUser: {prompt}"
             
         payload = {
@@ -104,12 +107,22 @@ class GeminiProvider(LLMProvider):
 
 
 class OpenRouterProvider(LLMProvider):
-    """Provider implementation for OpenRouter API."""
+    """Provider implementation for OpenRouter API.
     
-    def __init__(self):
+    Used by:
+      - Optimizer Agent → GPT-4 (openai/gpt-4o), temperature=1.0 for creativity
+      - Evaluator Agent → Meta-Llama-3-70B (meta-llama/llama-3-70b-instruct:nitro), temperature=0.0 for stability
+    
+    Accepts an optional `model` override at construction time so that each
+    agent can request its designated model without sharing state.
+    """
+    
+    def __init__(self, model: Optional[str] = None, temperature: float = 0.7):
         settings = get_settings()
         self.api_key = settings.openrouter_api_key
-        self.model = settings.openrouter_model
+        # Allow per-agent model override; fall back to optimizer model as default
+        self.model = model if model else settings.openrouter_optimizer_model
+        self.temperature = temperature
         self.timeout = settings.llm_timeout_seconds
         
         if not self.api_key:
@@ -120,7 +133,7 @@ class OpenRouterProvider(LLMProvider):
         url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "HTTP-Referer": "http://localhost", # Can be replaced with actual app URL if needed
+            "HTTP-Referer": "http://localhost",
             "X-Title": "EduPlanner"
         }
         
@@ -131,7 +144,8 @@ class OpenRouterProvider(LLMProvider):
         
         payload = {
             "model": self.model,
-            "messages": messages
+            "messages": messages,
+            "temperature": self.temperature,
         }
         
         async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -149,12 +163,20 @@ class OpenRouterProvider(LLMProvider):
                 raise LLMTimeoutError("OpenRouter API request timed out") from e
 
 
-def get_llm_provider(provider_name: str) -> LLMProvider:
-    """Factory method to get the requested provider."""
+def get_llm_provider(provider_name: str, model: Optional[str] = None, temperature: float = 0.7) -> LLMProvider:
+    """Factory method to get the requested provider.
+    
+    Args:
+        provider_name: Either "gemini" or "openrouter".
+        model: Optional model override for OpenRouter (e.g., "openai/gpt-4o" or
+               "meta-llama/llama-3-70b-instruct:nitro"). Ignored for Gemini.
+        temperature: Sampling temperature. Use 0.0 for deterministic (Evaluator),
+                     1.0 for creative (Optimizer).
+    """
     provider_name = provider_name.lower()
     if provider_name == "gemini":
         return GeminiProvider()
     elif provider_name == "openrouter":
-        return OpenRouterProvider()
+        return OpenRouterProvider(model=model, temperature=temperature)
     else:
         raise ValueError(f"Unknown LLM provider: {provider_name}")

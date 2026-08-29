@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
-import { assessmentApi, Question, SubmitAssessmentResponse } from '../../api/assessment';
-import { CheckCircle2, ChevronRight, Brain, AlertCircle } from 'lucide-react';
+import { assessmentApi, Question } from '../../api/assessment';
+import { CheckCircle2, ChevronRight, Brain, AlertCircle, Network } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+interface SkillResult {
+  skill_category: string;
+  score: number;
+}
+
+interface AssessmentResult {
+  message: string;
+  results?: SkillResult[];
+}
 
 export default function Assessment() {
-  const [assessmentId, setAssessmentId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [assessmentId, setAssessmentId] = useState<number | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentStep, setCurrentStep] = useState<'intro' | 'questions' | 'results'>('intro');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [results, setResults] = useState<SubmitAssessmentResponse | null>(null);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [results, setResults] = useState<AssessmentResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,36 +32,40 @@ export default function Assessment() {
     try {
       const response = await assessmentApi.start();
       setAssessmentId(response.assessment_id);
-      
-      const qResponse = await assessmentApi.getQuestions(response.assessment_id);
-      setQuestions(qResponse.questions);
+
+      const questionList = await assessmentApi.getQuestions(response.assessment_id);
+      setQuestions(questionList);
       setCurrentStep('questions');
-    } catch (err: any) {
+    } catch {
       setError('Failed to start assessment. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSelectOption = (questionId: string, option: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: option }));
+  const handleSelectOption = (questionId: number, option: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: option }));
   };
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
   const handleSubmit = async () => {
-    if (!assessmentId) return;
+    if (assessmentId === null) return;
     setIsLoading(true);
     setError(null);
     try {
-      const res = await assessmentApi.submit(assessmentId, { answers });
-      setResults(res);
+      const answersList = Object.entries(answers).map(([qId, selected]) => ({
+        question_id: Number(qId),
+        selected_answer: selected,
+      }));
+      const res = await assessmentApi.submit(assessmentId, { answers: answersList });
+      setResults(res as AssessmentResult);
       setCurrentStep('results');
-    } catch (err: any) {
+    } catch {
       setError('Failed to submit assessment.');
     } finally {
       setIsLoading(false);
@@ -57,9 +73,10 @@ export default function Assessment() {
   };
 
   const currentQuestion = questions[currentQuestionIndex];
-  const isAnswered = currentQuestion && !!answers[currentQuestion.id];
+  const isAnswered = currentQuestion && answers[currentQuestion.id] !== undefined;
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
+  /* ── Intro ─────────────────────────────────────────────── */
   if (currentStep === 'intro') {
     return (
       <div className="max-w-2xl mx-auto mt-12">
@@ -68,14 +85,28 @@ export default function Assessment() {
             <div className="mx-auto bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border border-primary/20">
               <Brain className="w-8 h-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl">Knowledge Assessment</CardTitle>
+            <CardTitle className="text-2xl">5-D Knowledge Assessment</CardTitle>
             <p className="text-gray-400 mt-2">
-              Let's evaluate your current skills to build your personalized learning plan.
+              EduPlanner will evaluate your skills across 5 cognitive dimensions to build your
+              personalised learning plan.
             </p>
           </CardHeader>
           <CardContent className="text-center space-y-6">
-            {error && <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded-xl">{error}</div>}
-            <Button onClick={startAssessment} isLoading={isLoading} size="lg" className="w-full sm:w-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+              {['Numerical Calculation', 'Abstract Thinking', 'Logical Reasoning', 'Association / Analogy', 'Spatial Imagination'].map((dim) => (
+                <div key={dim} className="flex items-center gap-2 p-3 bg-white/5 rounded-xl border border-white/10">
+                  <Network className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-xs font-medium text-gray-300">{dim}</span>
+                </div>
+              ))}
+            </div>
+            {error && (
+              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 p-3 rounded-xl">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {error}
+              </div>
+            )}
+            <Button id="start-assessment-btn" onClick={startAssessment} isLoading={isLoading} size="lg" className="w-full sm:w-auto">
               Start Assessment
             </Button>
           </CardContent>
@@ -84,7 +115,8 @@ export default function Assessment() {
     );
   }
 
-  if (currentStep === 'results' && results) {
+  /* ── Results ────────────────────────────────────────────── */
+  if (currentStep === 'results') {
     return (
       <div className="max-w-2xl mx-auto mt-12 space-y-6">
         <Card className="border-primary/30">
@@ -95,20 +127,38 @@ export default function Assessment() {
             <CardTitle className="text-2xl">Assessment Complete 🎉</CardTitle>
             <p className="text-gray-400 mt-2">Your skill profile has been updated.</p>
           </CardHeader>
-          <CardContent className="mt-8">
-            <h3 className="text-lg font-semibold mb-4">Skills Identified:</h3>
-            <div className="grid gap-3">
-              {results.results.map((skill, idx) => (
-                <div key={idx} className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/10">
-                  <span className="font-medium text-gray-200 capitalize">{skill.skill_category}</span>
-                  <div className="flex items-center gap-4">
-                    <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden hidden sm:block">
-                      <div className="h-full bg-primary" style={{ width: `${skill.score * 100}%` }} />
+          <CardContent className="mt-8 space-y-6">
+            {results?.results && results.results.length > 0 ? (
+              <>
+                <h3 className="text-lg font-semibold">Skills Identified:</h3>
+                <div className="grid gap-3">
+                  {results.results.map((skill, idx) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/10"
+                    >
+                      <span className="font-medium text-gray-200 capitalize">{skill.skill_category}</span>
+                      <div className="flex items-center gap-4">
+                        <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden hidden sm:block">
+                          <div className="h-full bg-primary" style={{ width: `${skill.score * 100}%` }} />
+                        </div>
+                        <span className="font-bold">{(skill.score * 100).toFixed(0)}%</span>
+                      </div>
                     </div>
-                    <span className="font-bold">{(skill.score * 100).toFixed(0)}%</span>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              </>
+            ) : (
+              <p className="text-gray-400 text-center">{results?.message ?? 'Assessment submitted successfully.'}</p>
+            )}
+            <div className="flex gap-3 justify-center pt-2">
+              <Button variant="outline" onClick={() => navigate('/student/skill-tree')}>
+                <Network className="w-4 h-4 mr-2" />
+                View Skill Tree
+              </Button>
+              <Button onClick={() => navigate('/student/dashboard')}>
+                Go to Dashboard
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -116,7 +166,7 @@ export default function Assessment() {
     );
   }
 
-  // Questions Step
+  /* ── Questions ──────────────────────────────────────────── */
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
@@ -134,7 +184,7 @@ export default function Assessment() {
         <CardHeader>
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-              {currentQuestion?.topic}
+              {currentQuestion?.skill_category}
             </span>
             <span className="text-xs text-gray-500">
               Difficulty: {currentQuestion?.difficulty}
@@ -151,6 +201,7 @@ export default function Assessment() {
               return (
                 <button
                   key={idx}
+                  id={`option-${idx}`}
                   onClick={() => handleSelectOption(currentQuestion.id, option)}
                   className={`w-full text-left p-4 rounded-xl border transition-all ${
                     isSelected
@@ -164,25 +215,27 @@ export default function Assessment() {
             })}
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className="mt-8 flex justify-end items-center gap-4">
             {error && (
               <div className="mr-auto flex items-center text-red-400 text-sm">
                 <AlertCircle className="w-4 h-4 mr-2" />
                 {error}
               </div>
             )}
-            
+
             {isLastQuestion ? (
-              <Button 
-                onClick={handleSubmit} 
-                disabled={!isAnswered || isLoading} 
+              <Button
+                id="submit-assessment-btn"
+                onClick={handleSubmit}
+                disabled={!isAnswered || isLoading}
                 isLoading={isLoading}
               >
                 Submit Assessment
               </Button>
             ) : (
-              <Button 
-                onClick={handleNext} 
+              <Button
+                id="next-question-btn"
+                onClick={handleNext}
                 disabled={!isAnswered}
                 className="group"
               >

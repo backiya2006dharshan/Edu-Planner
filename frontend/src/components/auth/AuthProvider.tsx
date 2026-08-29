@@ -7,6 +7,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: User) => void;
   logout: () => void;
+  updateUser: (user: User) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -26,8 +27,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
-    
-    // Optionally, we could call /api/auth/me here to validate token
+
     const validateToken = async () => {
       if (storedToken) {
         try {
@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(response.data);
           localStorage.setItem('user', JSON.stringify(response.data));
         } catch (error) {
-          console.error("Token validation failed", error);
+          console.error('Token validation failed', error);
           logout();
         }
       }
@@ -59,15 +59,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('user');
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      token,
-      login,
-      logout,
-      isAuthenticated: !!token,
-      isLoading
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        login,
+        logout,
+        updateUser,
+        isAuthenticated: !!token,
+        isLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

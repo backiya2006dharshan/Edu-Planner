@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.dependencies.auth import get_current_user, require_role
 from app.models.user import User
-from app.schemas.material import MaterialDocumentRead, MaterialSearchRequest
-from app.services.material_service import list_material_documents, search_material_documents, upload_material_document
+from app.schemas.material import MaterialDocumentRead, MaterialDocumentDetail, MaterialSearchRequest
+from app.services.material_service import list_material_documents, search_material_documents, upload_material_document, get_material_document_detail
 
 router = APIRouter(prefix="/materials", tags=["materials"])
 
@@ -28,9 +28,10 @@ async def material_upload(
     semester: str = Form(..., min_length=1, max_length=50),
     regulation: str = Form(..., min_length=1, max_length=100),
     file: UploadFile = File(...),
-    _: User = Depends(require_role("teacher")),
+    _: User = Depends(get_current_user),
 ) -> MaterialDocumentRead:
     return await upload_material_document(file=file, college=college, semester=semester, regulation=regulation)
+
 
 
 @router.post("/search", response_model=dict[str, list[list[Any]]])
@@ -39,3 +40,11 @@ async def material_search(
     _: User = Depends(get_current_user),
 ) -> dict[str, list[list[Any]]]:
     return await search_material_documents(payload)
+
+
+@router.get("/{material_id}", response_model=MaterialDocumentDetail)
+async def get_material_detail(
+    material_id: int,
+    _: User = Depends(get_current_user),
+) -> Any:
+    return await get_material_document_detail(material_id)

@@ -17,10 +17,22 @@ class Settings(BaseSettings):
     cors_origins: list[str] | str = Field(default_factory=lambda: ["http://localhost:5173"])
     database_url: str | None = None
     chroma_path: str = "./.chroma"
+
+    # --- API Keys ---
     gemini_api_key: str | None = None
     openrouter_api_key: str | None = None
-    gemini_model: str = "gemini-3.6-flash"
-    openrouter_model: str = "google/gemini-3.6-flash"
+    groq_api_key: str | None = None  # Direct Groq access (optional fallback)
+
+    # --- Model Names ---
+    # Analyst agent: OpenRouter / Gemini
+    gemini_model: str = "gemini-1.5-flash"
+    openrouter_analyst_model: str = "openai/gpt-4o-mini"
+    # Optimizer agent: GPT-4o-mini via OpenRouter
+    openrouter_optimizer_model: str = "openai/gpt-4o-mini"
+    # Evaluator agent: Meta-Llama-3.3-70B via OpenRouter
+    openrouter_evaluator_model: str = "meta-llama/llama-3.3-70b-instruct"
+
+    # --- LLM Runtime Settings ---
     llm_timeout_seconds: int = 60
     llm_max_retries: int = 3
     langgraph_max_iterations: int = 15

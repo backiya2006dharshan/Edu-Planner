@@ -9,25 +9,30 @@ export interface StudentProgress {
   last_active: string;
 }
 
+export interface TeacherStats {
+  total_students: number;
+  active_plans: number;
+  avg_completion_rate: number;
+  students_needing_attention: number;
+}
+
+export interface TeacherActivity {
+  name: string;
+  action: string;
+  time: string;
+}
+
 export const teacherApi = {
+  getStats: async (): Promise<TeacherStats> => {
+    const response = await apiClient.get<TeacherStats>('/teacher/stats');
+    return response.data;
+  },
   getStudents: async (): Promise<StudentProgress[]> => {
-    // Note: Mocking endpoint for now since there's no specific Phase 1-5 teacher endpoints
-    // Returning dummy data
-    return [
-      {
-        user: { id: 2, email: 'alice@kongu.edu', full_name: 'Alice Johnson', role: 'student', is_active: true },
-        skills_assessed: 4,
-        topics_completed: 2,
-        average_score: 85,
-        last_active: '2026-08-27T10:00:00Z'
-      },
-      {
-        user: { id: 3, email: 'bob@kongu.edu', full_name: 'Bob Smith', role: 'student', is_active: true },
-        skills_assessed: 2,
-        topics_completed: 1,
-        average_score: 60,
-        last_active: '2026-08-26T15:30:00Z'
-      }
-    ];
-  }
+    const response = await apiClient.get<StudentProgress[]>('/teacher/students');
+    return response.data;
+  },
+  getActivity: async (): Promise<TeacherActivity[]> => {
+    const response = await apiClient.get<TeacherActivity[]>('/teacher/activity');
+    return response.data;
+  },
 };

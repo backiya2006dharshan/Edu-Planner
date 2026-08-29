@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, JSON
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, JSON, Float
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
@@ -12,7 +12,7 @@ class StudentSkill(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     skill_category: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
-    score: Mapped[float] = mapped_column(Integer, nullable=False, default=0)
+    score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     last_updated: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
@@ -22,7 +22,7 @@ class StudentSkillHistory(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     skill_category: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
-    score: Mapped[float] = mapped_column(Integer, nullable=False)
+    score: Mapped[float] = mapped_column(Float, nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
 

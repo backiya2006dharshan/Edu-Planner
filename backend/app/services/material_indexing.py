@@ -84,8 +84,10 @@ def get_chroma_collection() -> Any:
     return client.get_or_create_collection("college_materials")
 
 
-def material_metadata(*, college: str, semester: str, regulation: str, document_id: int | None = None, page_number: int | None = None) -> dict[str, str | int]:
-    metadata: dict[str, str | int] = {"college": college, "semester": semester, "regulation": regulation}
+def material_metadata(*, college: str, semester: str, regulation: str, year: str | None = None, document_id: int | None = None, page_number: int | None = None) -> dict[str, str | int]:
+    metadata: dict[str, str | int] = {"college": college.strip(), "semester": str(semester).strip(), "regulation": str(regulation).strip()}
+    if year:
+        metadata["year"] = str(year).strip()
     if document_id is not None:
         metadata["document_id"] = document_id
     if page_number is not None:
@@ -93,7 +95,7 @@ def material_metadata(*, college: str, semester: str, regulation: str, document_
     return metadata
 
 
-def index_chunks(chunks: list[ParsedChunk], *, college: str, semester: str, regulation: str, document_id: int, content_hash: str) -> list[str]:
+def index_chunks(chunks: list[ParsedChunk], *, college: str, semester: str, regulation: str, year: str | None = None, document_id: int, content_hash: str) -> list[str]:
     if not chunks:
         return []
     ids = [f"{content_hash}:{index}" for index in range(len(chunks))]
@@ -102,19 +104,50 @@ def index_chunks(chunks: list[ParsedChunk], *, college: str, semester: str, regu
         ids=ids,
         documents=[chunk.content for chunk in chunks],
         embeddings=embeddings,
-        metadatas=[material_metadata(college=college, semester=semester, regulation=regulation, document_id=document_id, page_number=chunk.page_number) for chunk in chunks],
+        metadatas=[material_metadata(college=college, semester=semester, regulation=regulation, year=year, document_id=document_id, page_number=chunk.page_number) for chunk in chunks],
     )
     return ids
 
 
-def search_chunks(query: str, *, college: str, semester: str, regulation: str, limit: int = 5) -> dict[str, list[list[Any]]]:
+def search_chunks(query: str, *, college: str, semester: str, regulation: str, year: str | None = None, limit: int = 5) -> dict[str, list[list[Any]]]:
     embedding = get_embedding_model().encode([query], normalize_embeddings=True).tolist()
-    return get_chroma_collection().query(
-        query_embeddings=embedding,
-        n_results=limit,
-        where={"$and": [{"college": college}, {"semester": semester}, {"regulation": regulation}]},
-        include=["documents", "metadatas", "distances"],
-    )
+    
+    filters = []
+    if college:
+        filters.append({"college": college.strip()})
+    if semester:
+        filters.append({"semester": str(semester).strip()})
+    if regulation:
+        filters.append({"regulation": str(regulation).strip()})
+    if year:
+        filters.append({"year": str(year).strip()})
+
+    where_clause = {"$and": filters} if len(filters) > 1 else (filters[0] if filters else None)
+    
+    try:
+        results = get_chroma_collection().query(
+            query_embeddings=embedding,
+            n_results=limit,
+            where=where_clause,
+            include=["documents", "metadatas", "distances"],
+        )
+        docs = results.get("documents", [[]])[0]
+        if not docs and where_clause:
+            # Fallback query without strict metadata filter if no chunks matched strict metadata filter
+            fallback = get_chroma_collection().query(
+                query_embeddings=embedding,
+                n_results=limit,
+                include=["documents", "metadatas", "distances"],
+            )
+            if fallback.get("documents", [[]])[0]:
+                return fallback
+        return results
+    except Exception:
+        return get_chroma_collection().query(
+            query_embeddings=embedding,
+            n_results=limit,
+            include=["documents", "metadatas", "distances"],
+        )
 
 
 def file_content_hash(file_path: str | Path) -> str:

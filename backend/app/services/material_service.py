@@ -47,19 +47,23 @@ async def upload_material_document(*, file: UploadFile, college: str, semester: 
     if session_factory is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database is not configured")
 
-    temp_path: Path | None = None
+    upload_dir = Path("app/uploads/materials")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    temp_path = upload_dir / f"temp_{Path(file.filename).name}"
+
     try:
-        with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-            temp_path = Path(temp_file.name)
+        with open(temp_path, "wb") as f_out:
             while True:
                 chunk = await file.read(1024 * 64)
                 if not chunk:
                     break
-                temp_file.write(chunk)
+                f_out.write(chunk)
 
         content_hash = file_content_hash(temp_path)
         chunks = parse_material_file(temp_path)
         if not chunks:
+            if temp_path.exists():
+                temp_path.unlink()
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The uploaded file did not contain readable text")
 
         with session_factory() as session:
@@ -67,14 +71,22 @@ async def upload_material_document(*, file: UploadFile, college: str, semester: 
                 select(MaterialDocument).where(MaterialDocument.content_hash == content_hash)
             ).scalar_one_or_none()
             if existing is not None:
+                if temp_path.exists():
+                    temp_path.unlink()
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This file has already been indexed")
+
+            # Move temp file to persistent hash named file
+            persistent_path = upload_dir / f"{content_hash}{suffix}"
+            if persistent_path.exists():
+                persistent_path.unlink()
+            temp_path.rename(persistent_path)
 
             document = MaterialDocument(
                 college=college,
                 semester=semester,
                 regulation=regulation,
                 file_name=file.filename,
-                file_path=str(temp_path),
+                file_path=str(persistent_path),
                 mime_type=file.content_type,
                 content_hash=content_hash,
                 embedding_model="all-MiniLM-L6-v2",
@@ -114,9 +126,7 @@ async def upload_material_document(*, file: UploadFile, college: str, semester: 
         raise
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
-    finally:
-        if temp_path is not None:
-            temp_path.unlink(missing_ok=True)
+
 
 
 async def search_material_documents(payload: MaterialSearchRequest) -> dict[str, list[list[object]]]:
@@ -130,3 +140,44 @@ async def search_material_documents(payload: MaterialSearchRequest) -> dict[str,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+
+
+async def get_material_document_detail(material_id: int):
+    session_factory = get_session_factory()
+    if session_factory is None:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database is not configured")
+
+    with session_factory() as session:
+        document = session.get(MaterialDocument, material_id)
+        if not document:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material document not found")
+
+        chunks = session.execute(
+            select(MaterialChunk)
+            .where(MaterialChunk.document_id == material_id)
+            .order_by(MaterialChunk.chunk_index.asc())
+        ).scalars().all()
+
+        return {
+            "id": document.id,
+            "college": document.college,
+            "semester": document.semester,
+            "regulation": document.regulation,
+            "file_name": document.file_name,
+            "file_path": document.file_path,
+            "mime_type": document.mime_type,
+            "content_hash": document.content_hash,
+            "embedding_model": document.embedding_model,
+            "chunk_count": document.chunk_count,
+            "created_at": document.created_at,
+            "updated_at": document.updated_at,
+            "chunks": [
+                {
+                    "id": c.id,
+                    "chunk_index": c.chunk_index,
+                    "content": c.content,
+                    "page_number": c.page_number,
+                }
+                for c in chunks
+            ]
+        }

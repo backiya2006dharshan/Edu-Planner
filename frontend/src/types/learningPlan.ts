@@ -16,6 +16,16 @@ export interface GeneratedPlan {
   difficulty_progression: string;
   assessment_strategy: string;
   personalization_notes: string;
+  rag_materials_used?: string[];
+  expected_skills?: string[];
+}
+
+export interface SkillGaps {
+  required_skills?: string[];
+  known_skills?: string[];
+  weak_skills?: string[];
+  missing_skills?: string[];
+  prerequisites?: string[];
 }
 
 export interface LearningPlanResponse {
@@ -25,4 +35,7 @@ export interface LearningPlanResponse {
   evaluator_feedback: string;
   issues: string[];
   iteration_count: number;
+  skill_gaps?: SkillGaps;
+  rag_retrieval_status?: string;
+  rag_chunks_retrieved?: number;
 }

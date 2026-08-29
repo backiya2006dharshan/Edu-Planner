@@ -48,3 +48,27 @@ class LearningPlanResponse(LearningPlanBase):
     updated_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class VerificationQuestion(BaseModel):
+    id: int
+    question_text: str
+    options: List[str]
+
+
+class VerificationAnswer(BaseModel):
+    question_id: int
+    selected_option: str
+
+
+class VerificationSubmitRequest(BaseModel):
+    answers: List[VerificationAnswer]
+
+
+class VerificationResultResponse(BaseModel):
+    passed: bool
+    score_percent: float
+    correct_count: int
+    total_count: int
+    message: str
+

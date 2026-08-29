@@ -12,9 +12,11 @@ import LearningPlanGenerator from './pages/student/LearningPlanGenerator';
 import SkillTree from './pages/student/SkillTree';
 import Materials from './pages/student/Materials';
 import Progress from './pages/student/Progress';
+import Profile from './pages/student/Profile';
 import TeacherLayout from './layouts/TeacherLayout';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import StudentViewer from './pages/teacher/StudentViewer';
+
 
 function App() {
   return (
@@ -35,6 +37,8 @@ function App() {
               <Route path="/student/skill-tree" element={<SkillTree />} />
               <Route path="/student/materials" element={<Materials />} />
               <Route path="/student/progress" element={<Progress />} />
+              <Route path="/student/profile" element={<Profile />} />
+
             </Route>
           </Route>
 
@@ -43,7 +47,9 @@ function App() {
             <Route element={<TeacherLayout />}>
               <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
               <Route path="/teacher/students" element={<StudentViewer />} />
+              <Route path="/teacher/materials" element={<Materials />} />
             </Route>
+
           </Route>
         </Routes>
       </AuthProvider>

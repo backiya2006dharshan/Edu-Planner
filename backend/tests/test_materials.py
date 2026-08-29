@@ -78,7 +78,7 @@ def test_teacher_can_upload_and_search_materials(client, monkeypatch):
     assert search_response.json()["documents"][0][0] == "University learning outcomes"
 
 
-def test_student_cannot_upload_materials(client, monkeypatch):
+def test_student_can_upload_materials(client, monkeypatch):
     student = register_user(
         client,
         email="materials-student@example.com",
@@ -94,4 +94,4 @@ def test_student_cannot_upload_materials(client, monkeypatch):
         files={"file": ("sample.txt", "hello world", "text/plain")},
         data={"college": "CSE", "semester": "2024", "regulation": "R2021"},
     )
-    assert response.status_code == 403
+    assert response.status_code == 201

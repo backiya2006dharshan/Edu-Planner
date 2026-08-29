@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, NotRequired, Annotated
+from typing import TypedDict, Optional, NotRequired, Annotated, Any
 import operator
 from pydantic import BaseModel, Field
 
@@ -33,6 +33,8 @@ class OptimizerResult(BaseModel):
     difficulty_progression: str = ""
     assessment_strategy: str = ""
     personalization_notes: str = ""
+    rag_materials_used: list[str] = Field(default_factory=list)
+    expected_skills: list[str] = Field(default_factory=list)
 
 
 class EvaluatorResult(BaseModel):
@@ -71,10 +73,12 @@ class AgentState(TypedDict):
     
     # Skill assessment context
     skill_scores: SkillScores
+    skill_gaps: NotRequired[Optional[dict[str, Any]]]
     
     # External retrieved context
     curriculum_context: NotRequired[Optional[str]]
     rag_context: NotRequired[Optional[str]]
+    rag_chunks_retrieved: NotRequired[int]
     
     # Agent Results (Populated progressively)
     analyst_result: NotRequired[Optional[AnalystResult]]

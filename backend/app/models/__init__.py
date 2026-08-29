@@ -3,3 +3,4 @@ from app.models.curriculum import Department, LearningObjective, Semester, Subje
 from app.models.material import MaterialChunk, MaterialDocument
 from app.models.user import User
 from app.models.learning_plan import LearningPlan, LearningModule, LearningTask
+from app.models.classroom import Classroom, ClassMember

@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DiagnosticQuestionPublic(BaseModel):
@@ -33,3 +33,13 @@ class SkillScore(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AddCustomSkillRequest(BaseModel):
+    skill_category: str
+    initial_score: float = 0.0
+
+
+
+class UpdateSkillScoreRequest(BaseModel):
+    score: float = Field(..., ge=0.0, le=100.0)

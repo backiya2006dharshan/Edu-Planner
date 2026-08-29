@@ -88,11 +88,11 @@ def test_assessment_lifecycle(client, student_token, seed_questions):
         assert skill["score"] == 100.0
 
 
-def test_assessment_start_fails_if_missing_category(client, student_token):
-    # Do not seed questions
+def test_assessment_start_auto_seeds_questions(client, student_token):
+    # Missing categories are automatically seeded/generated
     headers = {"Authorization": f"Bearer {student_token}"}
     start_resp = client.post("/assessment/start", headers=headers)
-    assert start_resp.status_code == 500
+    assert start_resp.status_code == 200
 
 
 def test_teacher_cannot_take_assessment(client, teacher_token):

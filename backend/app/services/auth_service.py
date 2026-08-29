@@ -83,3 +83,25 @@ async def get_current_user_from_token(token: str) -> User:
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
     return user
+
+
+async def update_user_profile(user_id: int, payload) -> User:
+    """Update mutable profile fields for a user. Only non-None fields are updated."""
+    def _update() -> User:
+        session_factory = _get_session_factory()
+        with session_factory() as session:
+            user = session.get(User, user_id)
+            if user is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+            update_data = payload.model_dump(exclude_none=True)
+            for field, value in update_data.items():
+                if hasattr(user, field):
+                    setattr(user, field, value)
+
+            session.commit()
+            session.refresh(user)
+            return user
+
+    return await asyncio.to_thread(_update)
+

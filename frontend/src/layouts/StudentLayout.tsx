@@ -11,8 +11,10 @@ import {
   LogOut,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  UserCircle2
 } from 'lucide-react';
+
 import { cn } from '../utils/cn';
 import { Button } from '../components/common/Button';
 
@@ -33,7 +35,9 @@ export default function StudentLayout() {
     { name: 'Skill Tree', path: '/student/skill-tree', icon: Network },
     { name: 'Materials', path: '/student/materials', icon: Library },
     { name: 'Progress', path: '/student/progress', icon: LineChart },
+    { name: 'Profile', path: '/student/profile', icon: UserCircle2 },
   ];
+
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -108,10 +112,15 @@ export default function StudentLayout() {
               <p className="text-sm font-medium text-gray-200">{user?.full_name}</p>
               <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30">
+            <button
+              onClick={() => navigate('/student/profile')}
+              className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 hover:bg-primary/30 transition-colors"
+              title="Edit Profile"
+            >
               {user?.full_name.charAt(0).toUpperCase()}
-            </div>
+            </button>
           </div>
+
         </header>
 
         {/* Page Content */}

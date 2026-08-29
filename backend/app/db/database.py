@@ -32,6 +32,44 @@ def get_session_factory() -> sessionmaker[Session] | None:
     return sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
+# New profile columns added to the users table.
+# Each tuple is (column_name, column_definition).
+_USER_PROFILE_COLUMNS: list[tuple[str, str]] = [
+    ("phone",          "VARCHAR(30)"),
+    ("department",     "VARCHAR(100)"),
+    ("year_of_study",  "VARCHAR(20)"),
+    ("bio",            "TEXT"),
+    ("college",        "VARCHAR(255)"),
+    ("regulation",     "VARCHAR(50)"),
+    ("semester",       "VARCHAR(20)"),
+]
+
+
+def _run_profile_migrations(engine: Engine) -> None:
+    """Add new user profile columns that don't yet exist in the database."""
+    with engine.connect() as conn:
+        dialect_name = engine.dialect.name
+        if dialect_name == "sqlite":
+            res = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+            existing_cols = {row[1] for row in res}
+            for col_name, col_type in _USER_PROFILE_COLUMNS:
+                if col_name not in existing_cols:
+                    try:
+                        conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+                        conn.commit()
+                    except Exception as exc:
+                        conn.rollback()
+                        logger.debug("Could not add column users.%s: %s", col_name, exc)
+        else:
+            for col_name, col_type in _USER_PROFILE_COLUMNS:
+                try:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col_name} {col_type}"))
+                    conn.commit()
+                except Exception as exc:
+                    conn.rollback()
+                    logger.debug("Could not add column users.%s: %s", col_name, exc)
+
+
 async def init_db() -> None:
     engine = get_engine()
     if engine is None:
@@ -40,12 +78,16 @@ async def init_db() -> None:
 
     def create_tables() -> None:
         from app.models import curriculum  # noqa: F401
-        from app.models import material  # noqa: F401
-        from app.models import user  # noqa: F401
+        from app.models import material    # noqa: F401
+        from app.models import user        # noqa: F401
         from app.models import assessment  # noqa: F401
         from app.models import learning_plan  # noqa: F401
+        from app.models import classroom      # noqa: F401
 
         Base.metadata.create_all(bind=engine)
+
+        # Run additive column migrations after create_all
+        _run_profile_migrations(engine)
 
     try:
         await asyncio.to_thread(create_tables)

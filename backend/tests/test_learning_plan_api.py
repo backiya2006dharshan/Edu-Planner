@@ -34,7 +34,8 @@ async def test_get_active_plan_not_found(async_client: AsyncClient, test_student
     
     try:
         response = await async_client.get("/api/learning-plans/active")
-        assert response.status_code == 404
+        assert response.status_code == 200
+        assert response.json() is None
     finally:
         app.dependency_overrides.pop(get_current_user)
         app.dependency_overrides.pop(get_db)

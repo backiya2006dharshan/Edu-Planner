@@ -1,8 +1,8 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+EMAIL_PATTERN = r"^[^\@\s]+@[^\@\s]+\.[^\@\s]+$"
 
 
 class RegisterRequest(BaseModel):
@@ -23,6 +23,27 @@ class UserPublic(BaseModel):
     full_name: str
     role: Literal["student", "teacher"]
     is_active: bool
+    phone: Optional[str] = None
+    department: Optional[str] = None
+    year_of_study: Optional[str] = None
+    bio: Optional[str] = None
+    college: Optional[str] = None
+    regulation: Optional[str] = None
+    semester: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class UpdateProfileRequest(BaseModel):
+    """Fields a user may update on their own profile."""
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    phone: Optional[str] = Field(None, max_length=30)
+    department: Optional[str] = Field(None, max_length=100)
+    year_of_study: Optional[str] = Field(None, max_length=20)
+    bio: Optional[str] = Field(None, max_length=1000)
+    college: Optional[str] = Field(None, max_length=255)
+    regulation: Optional[str] = Field(None, max_length=50)
+    semester: Optional[str] = Field(None, max_length=20)
 
 
 class AuthResponse(BaseModel):

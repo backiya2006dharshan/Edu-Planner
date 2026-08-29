@@ -34,18 +34,43 @@ async def generate_learning_plan(
     """
     Generate a personalized learning plan using the multi-agent workflow.
     """
-    # 1. Load skill scores for the current user
+    # 1. Load skill scores for the current user and calculate skill gaps
     skills = db.execute(select(StudentSkill).where(StudentSkill.user_id == current_user.id)).scalars().all()
     
-    # Map DB records to the AI SkillScores object
     skill_kwargs = {}
+    known_skills = []
+    weak_skills = []
+    missing_skills = []
+    
     for skill in skills:
         category_normalized = skill.skill_category.lower().replace(" ", "_").replace("/", "_")
         if category_normalized in SkillScores.model_fields:
             skill_kwargs[category_normalized] = skill.score
             
+        if skill.score >= 70:
+            known_skills.append(f"{skill.skill_category} ({int(skill.score)}%)")
+        elif skill.score > 0:
+            weak_skills.append(f"{skill.skill_category} ({int(skill.score)}%)")
+        else:
+            missing_skills.append(f"{skill.skill_category} (0%)")
+
     ai_skills = SkillScores(**skill_kwargs)
     
+    # Topic specific skill requirements breakdown
+    topic_clean = request.topic.strip()
+    required_skills = [f"{topic_clean} Core Fundamentals", f"{topic_clean} Practical Application", f"{topic_clean} Assessment"]
+    
+    skill_gaps = {
+        "required_skills": required_skills,
+        "known_skills": known_skills if known_skills else ["General Conceptual Understanding"],
+        "weak_skills": weak_skills if weak_skills else ["Specific Topic Implementation"],
+        "missing_skills": missing_skills,
+        "prerequisites": ["Core Subject Basics", "Syntax & Logic"]
+    }
+    
+    logger.info(f"[Learning Plan Request] User ID: {current_user.id}, Subject: {request.subject}, Topic: {request.topic}, Goal: {request.learning_goal}")
+    logger.info(f"[Skill Retrieval Status] Found {len(skills)} skill records for User {current_user.id}. Weak/Missing: {len(weak_skills) + len(missing_skills)}")
+
     # 2. Build Curriculum Context
     curriculum_parts = []
     subject_model = db.execute(
@@ -77,12 +102,15 @@ async def generate_learning_plan(
 
     # 3. Build RAG Context
     rag_parts = []
-    search_query = f"{request.subject} {request.topic} {request.learning_goal}"
+    search_query = f"{request.subject} {request.topic} {request.learning_goal} {' '.join(weak_skills + missing_skills)}"
+    rag_retrieval_status = "NOT_EXECUTED"
+    retrieved_chunk_count = 0
     
     try:
         results = search_chunks(
             query=search_query,
             college=request.college,
+            year=request.year,
             semester=request.semester,
             regulation=request.regulation,
             limit=5
@@ -90,23 +118,33 @@ async def generate_learning_plan(
         
         documents = results.get("documents", [[]])[0]
         metadatas = results.get("metadatas", [[]])[0]
+        retrieved_chunk_count = len(documents)
         
-        for doc, meta in zip(documents, metadatas):
-            page_info = f" (Page {meta.get('page_number', '?')})" if meta and meta.get("page_number") else ""
-            rag_parts.append(f"--- Chunk{page_info} ---\n{doc}")
+        if documents:
+            rag_retrieval_status = f"SUCCESS: Retrieved {len(documents)} relevant material chunks from ChromaDB."
+            for doc, meta in zip(documents, metadatas):
+                page_info = f" (Page {meta.get('page_number', '?')})" if meta and meta.get("page_number") else ""
+                doc_name = meta.get("file_name") or meta.get("college") or "Uploaded Material"
+                rag_parts.append(f"--- Document Chunk [{doc_name}]{page_info} ---\n{doc}")
+        else:
+            rag_retrieval_status = "WARNING: No uploaded materials matching search criteria found in ChromaDB vector store."
             
     except Exception as e:
-        logger.warning(f"RAG Retrieval failed: {e}")
+        logger.warning(f"RAG Retrieval error: {e}")
+        rag_retrieval_status = f"ERROR: RAG vector store search failed: {e}"
         
     rag_context_str = "\n\n".join(rag_parts)
-    
-    # 4. Build initial state
+    logger.info(f"[RAG Status] Status: {rag_retrieval_status}, Chunks Retrieved: {retrieved_chunk_count}")
+
+    # 4. Build initial state for Multi-Agent Workflow
     initial_state: AgentState = {
         "student_id": current_user.id,
         "subject": request.subject,
         "topic": request.topic,
         "learning_goal": request.learning_goal,
         "skill_scores": ai_skills,
+        "skill_gaps": skill_gaps,
+        "rag_chunks_retrieved": retrieved_chunk_count
     }
     
     if curriculum_context_str:
@@ -229,11 +267,10 @@ async def generate_learning_plan(
                 db.add(db_prac_task)
         
         db.commit()
+        logger.info(f"[Persistence Status] Successfully saved LearningPlan (ID: {db_plan.id}), modules, and tasks for User {current_user.id}")
     except Exception as e:
         db.rollback()
-        logger.error(f"Failed to persist learning plan to database: {e}")
-        # We can either fail the request or still return the plan. 
-        # Requirement: "If: LearningPlan creation succeeds but module creation fails... the database transaction should roll back. Do not leave partially-created learning plans."
+        logger.error(f"[Persistence Status] Failed to persist learning plan: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to persist learning plan to the database."
@@ -245,5 +282,8 @@ async def generate_learning_plan(
         plan=final_data.get("plan", {}),
         evaluator_feedback=final_data.get("evaluator_feedback", ""),
         issues=final_data.get("issues", []),
-        iteration_count=final_state.get("iteration_count", 0)
+        iteration_count=final_state.get("iteration_count", 0),
+        skill_gaps=skill_gaps,
+        rag_retrieval_status=rag_retrieval_status,
+        rag_chunks_retrieved=retrieved_chunk_count
     )

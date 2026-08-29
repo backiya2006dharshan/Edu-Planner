@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.ai.state import AgentState, EvaluatorResult
 from app.ai.providers import get_llm_provider
 from app.ai.exceptions import LLMConfigurationError, LLMAPIError
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +109,16 @@ async def run_evaluator(state: AgentState) -> Dict[str, Any]:
     prompt = "\n".join(prompt_lines)
 
     # Invoke provider
-    provider = get_llm_provider("gemini")
+    settings = get_settings()
+    provider_name = "openrouter"
+    model_name = settings.openrouter_evaluator_model
+    logger.info(f"[Agent: Evaluator] Invoking Provider: {provider_name}, Model: {model_name}, Iteration: {state.get('iteration_count', 1)}")
+
+    provider = get_llm_provider(
+        provider_name,
+        model=model_name,
+        temperature=0.0
+    )
     
     try:
         raw_response = await provider.generate(prompt=prompt, system_prompt=SYSTEM_PROMPT)
@@ -128,6 +138,10 @@ async def run_evaluator(state: AgentState) -> Dict[str, Any]:
             clean_response = clean_response[:-3]
             
         data = json.loads(clean_response.strip())
+        list_fields = ["strengths", "issues", "missing_requirements", "recommendations"]
+        for field in list_fields:
+            if field in data and isinstance(data[field], str):
+                data[field] = [data[field]]
         llm_resp = EvaluatorLLMResponse(**data)
         
         # Deterministic scoring
