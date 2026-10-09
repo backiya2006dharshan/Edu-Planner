@@ -47,9 +47,15 @@ class LearningTask(Base):
     module_id: Mapped[int] = mapped_column(Integer, ForeignKey("learning_modules.id", ondelete="CASCADE"), index=True)
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(Text, nullable=True)
+    objectives: Mapped[str] = mapped_column(Text, nullable=True)
+    skills: Mapped[str] = mapped_column(Text, nullable=True)
+    estimated_time: Mapped[int] = mapped_column(Integer, default=20)
+    difficulty: Mapped[str] = mapped_column(String(50), default="Beginner")
+    learning_outcome: Mapped[str] = mapped_column(Text, nullable=True)
     task_type: Mapped[str] = mapped_column(String(50), default="lesson")  # lesson, practice, assessment
     order_index: Mapped[int] = mapped_column(Integer, default=0)
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(String(50), default="not_started")
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

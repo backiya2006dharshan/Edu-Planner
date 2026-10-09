@@ -27,10 +27,10 @@ export default function StudentViewer() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Students Directory</h1>
-          <p className="text-gray-400">Manage and monitor student learning plans.</p>
+          <p className="text-text-muted">Manage and monitor student learning plans.</p>
         </div>
         <div className="relative w-full sm:w-72">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <Input 
             placeholder="Search students..." 
             className="pl-10"
@@ -43,26 +43,26 @@ export default function StudentViewer() {
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-400">
-              <thead className="text-xs uppercase bg-white/5 border-b border-white/10">
+            <table className="w-full text-left text-sm text-text-muted">
+              <thead className="text-xs uppercase bg-surface-light border-b border-border">
                 <tr>
-                  <th className="px-6 py-4 font-medium text-gray-200">Student Name</th>
-                  <th className="px-6 py-4 font-medium text-gray-200">Skills</th>
-                  <th className="px-6 py-4 font-medium text-gray-200">Avg Score</th>
-                  <th className="px-6 py-4 font-medium text-gray-200">Last Active</th>
-                  <th className="px-6 py-4 text-right font-medium text-gray-200">Actions</th>
+                  <th className="px-6 py-4 font-medium text-text-primary">Student Name</th>
+                  <th className="px-6 py-4 font-medium text-text-primary">Skills</th>
+                  <th className="px-6 py-4 font-medium text-text-primary">Avg Score</th>
+                  <th className="px-6 py-4 font-medium text-text-primary">Last Active</th>
+                  <th className="px-6 py-4 text-right font-medium text-text-primary">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((s, i) => (
-                  <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <tr key={i} className="border-b border-border hover:bg-surface-light transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shrink-0">
                           {s.user.full_name.charAt(0)}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-200">{s.user.full_name}</p>
+                          <p className="font-semibold text-text-primary">{s.user.full_name}</p>
                           <p className="text-xs">{s.user.email}</p>
                         </div>
                       </div>
@@ -75,13 +75,13 @@ export default function StudentViewer() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="w-16 h-1.5 bg-surface-light rounded-full overflow-hidden">
                           <div 
                             className={`h-full ${s.average_score >= 80 ? 'bg-green-500' : s.average_score >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} 
                             style={{ width: `${s.average_score}%` }} 
                           />
                         </div>
-                        <span className="font-medium text-gray-200">{s.average_score}%</span>
+                        <span className="font-medium text-text-primary">{s.average_score}%</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -102,7 +102,7 @@ export default function StudentViewer() {
                 
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
                       No students found matching your search.
                     </td>
                   </tr>

@@ -60,6 +60,27 @@ def _run_profile_migrations(engine: Engine) -> None:
                     except Exception as exc:
                         conn.rollback()
                         logger.debug("Could not add column users.%s: %s", col_name, exc)
+                        
+            # Migrations for learning_tasks
+            task_cols = [
+                ("objectives", "TEXT"),
+                ("skills", "TEXT"),
+                ("estimated_time", "INTEGER DEFAULT 20"),
+                ("difficulty", "VARCHAR(50) DEFAULT 'Beginner'"),
+                ("learning_outcome", "TEXT"),
+                ("status", "VARCHAR(50) DEFAULT 'not_started'"),
+                ("task_type", "VARCHAR(50) DEFAULT 'lesson'")
+            ]
+            res = conn.execute(text("PRAGMA table_info(learning_tasks)")).fetchall()
+            existing_task_cols = {row[1] for row in res}
+            for col_name, col_type in task_cols:
+                if col_name not in existing_task_cols:
+                    try:
+                        conn.execute(text(f"ALTER TABLE learning_tasks ADD COLUMN {col_name} {col_type}"))
+                        conn.commit()
+                    except Exception as exc:
+                        conn.rollback()
+                        logger.debug("Could not add column learning_tasks.%s: %s", col_name, exc)
         else:
             for col_name, col_type in _USER_PROFILE_COLUMNS:
                 try:
@@ -68,6 +89,23 @@ def _run_profile_migrations(engine: Engine) -> None:
                 except Exception as exc:
                     conn.rollback()
                     logger.debug("Could not add column users.%s: %s", col_name, exc)
+            
+            task_cols = [
+                ("objectives", "TEXT"),
+                ("skills", "TEXT"),
+                ("estimated_time", "INTEGER DEFAULT 20"),
+                ("difficulty", "VARCHAR(50) DEFAULT 'Beginner'"),
+                ("learning_outcome", "TEXT"),
+                ("status", "VARCHAR(50) DEFAULT 'not_started'"),
+                ("task_type", "VARCHAR(50) DEFAULT 'lesson'")
+            ]
+            for col_name, col_type in task_cols:
+                try:
+                    conn.execute(text(f"ALTER TABLE learning_tasks ADD COLUMN IF NOT EXISTS {col_name} {col_type}"))
+                    conn.commit()
+                except Exception as exc:
+                    conn.rollback()
+                    logger.debug("Could not add column learning_tasks.%s: %s", col_name, exc)
 
 
 async def init_db() -> None:

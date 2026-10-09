@@ -14,11 +14,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = 'inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50';
     
     const variants = {
-      primary: 'bg-primary text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20',
-      secondary: 'bg-surface border border-white/10 hover:bg-white/5 text-gray-100',
+      primary: 'btn-gradient',
+      secondary: 'bg-surface border border-border hover:bg-surface-light text-text-primary',
       outline: 'border border-primary text-primary hover:bg-primary/10',
-      ghost: 'hover:bg-white/10 hover:text-white text-gray-300',
-      danger: 'bg-red-500 text-white hover:bg-red-600',
+      ghost: 'hover:bg-surface-light hover:text-text-primary text-text-muted',
+      danger: 'bg-red-500 text-text-primary hover:bg-red-600 shadow-lg shadow-red-500/20',
     };
     
     const sizes = {

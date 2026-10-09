@@ -14,7 +14,7 @@ from app.services.material_indexing import file_content_hash, index_chunks, pars
 SUPPORTED_MATERIAL_SUFFIXES = {".txt", ".md", ".rst", ".pdf", ".docx"}
 
 
-def _document_scope_filters(college: str | None = None, semester: str | None = None, regulation: str | None = None):
+def _document_scope_filters(college: str | None = None, semester: str | None = None, regulation: str | None = None, class_id: int | None = None, uploader_id: int | None = None):
     query = select(MaterialDocument)
     if college is not None:
         query = query.where(MaterialDocument.college == college)
@@ -22,20 +22,24 @@ def _document_scope_filters(college: str | None = None, semester: str | None = N
         query = query.where(MaterialDocument.semester == semester)
     if regulation is not None:
         query = query.where(MaterialDocument.regulation == regulation)
+    if class_id is not None:
+        query = query.where(MaterialDocument.class_id == class_id)
+    if uploader_id is not None:
+        query = query.where(MaterialDocument.uploader_id == uploader_id)
     return query
 
 
-async def list_material_documents(*, college: str | None = None, semester: str | None = None, regulation: str | None = None) -> list[MaterialDocumentRead]:
+async def list_material_documents(*, college: str | None = None, semester: str | None = None, regulation: str | None = None, class_id: int | None = None, uploader_id: int | None = None) -> list[MaterialDocumentRead]:
     session_factory = get_session_factory()
     if session_factory is None:
         return []
 
     with session_factory() as session:
-        documents = session.execute(_document_scope_filters(college, semester, regulation)).scalars().all()
+        documents = session.execute(_document_scope_filters(college, semester, regulation, class_id, uploader_id)).scalars().all()
     return [MaterialDocumentRead.model_validate(document) for document in documents]
 
 
-async def upload_material_document(*, file: UploadFile, college: str, semester: str, regulation: str) -> MaterialDocumentRead:
+async def upload_material_document(*, file: UploadFile, college: str, semester: str, regulation: str, class_id: int | None = None, uploader_id: int | None = None) -> MaterialDocumentRead:
     if not file.filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A file is required")
 
@@ -85,12 +89,14 @@ async def upload_material_document(*, file: UploadFile, college: str, semester: 
                 college=college,
                 semester=semester,
                 regulation=regulation,
+                class_id=class_id,
                 file_name=file.filename,
                 file_path=str(persistent_path),
                 mime_type=file.content_type,
                 content_hash=content_hash,
                 embedding_model="all-MiniLM-L6-v2",
                 chunk_count=len(chunks),
+                uploader_id=uploader_id,
             )
             session.add(document)
             session.flush()
@@ -100,6 +106,7 @@ async def upload_material_document(*, file: UploadFile, college: str, semester: 
                 college=college,
                 semester=semester,
                 regulation=regulation,
+                class_id=class_id,
                 document_id=document.id,
                 content_hash=content_hash,
             )
@@ -115,6 +122,7 @@ async def upload_material_document(*, file: UploadFile, college: str, semester: 
                         college=college,
                         semester=semester,
                         regulation=regulation,
+                        class_id=class_id,
                     )
                 )
 
@@ -129,15 +137,38 @@ async def upload_material_document(*, file: UploadFile, college: str, semester: 
 
 
 
-async def search_material_documents(payload: MaterialSearchRequest) -> dict[str, list[list[object]]]:
+async def search_material_documents(payload: MaterialSearchRequest, uploader_id: int | None = None) -> dict[str, list[list[object]]]:
     try:
-        return search_chunks(
+        results = search_chunks(
             payload.query,
             college=payload.college,
             semester=payload.semester,
             regulation=payload.regulation,
             limit=payload.limit,
         )
+        
+        if uploader_id is not None:
+            session_factory = get_session_factory()
+            with session_factory() as session:
+                docs = session.execute(
+                    select(MaterialDocument.id).where(MaterialDocument.uploader_id == uploader_id)
+                ).scalars().all()
+                allowed_doc_ids = set(docs)
+
+            filtered_results: dict[str, list[list[object]]] = {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
+            if results.get("ids") and results["ids"][0]:
+                for i in range(len(results["ids"][0])):
+                    meta = results.get("metadatas", [[{}]])[0][i] or {}
+                    if meta.get("document_id") in allowed_doc_ids:
+                        filtered_results["ids"][0].append(results["ids"][0][i])
+                        filtered_results["documents"][0].append(results["documents"][0][i])
+                        if results.get("metadatas"):
+                            filtered_results["metadatas"][0].append(results["metadatas"][0][i])
+                        if results.get("distances"):
+                            filtered_results["distances"][0].append(results["distances"][0][i])
+            return filtered_results
+
+        return results
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
@@ -183,15 +214,15 @@ async def get_material_document_detail(material_id: int):
         }
 
 
-async def delete_material_document(material_id: int):
+async def delete_material_document(material_id: int, uploader_id: int | None = None):
     session_factory = get_session_factory()
     if session_factory is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database is not configured")
 
     with session_factory() as session:
         document = session.get(MaterialDocument, material_id)
-        if not document:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material document not found")
+        if not document or (uploader_id is not None and document.uploader_id != uploader_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material not found or not authorized")
 
         # Delete from chroma
         from app.services.material_indexing import get_chroma_collection

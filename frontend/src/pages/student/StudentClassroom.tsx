@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/commo
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useAuth } from '../../components/auth/AuthProvider';
+import { LearningTaskItem } from '../../components/learning/LearningTaskItem';
 import {
   classroomApi,
   Classroom,
@@ -69,10 +70,10 @@ function FileBadge({ name }: { name: string }) {
     pdf: { label: 'PDF', bg: 'bg-red-500/20', text: 'text-red-400' },
     docx: { label: 'DOCX', bg: 'bg-blue-500/20', text: 'text-blue-400' },
     pptx: { label: 'PPTX', bg: 'bg-orange-500/20', text: 'text-orange-400' },
-    txt: { label: 'TXT', bg: 'bg-gray-500/20', text: 'text-gray-400' },
+    txt: { label: 'TXT', bg: 'bg-gray-500/20', text: 'text-text-muted' },
     md: { label: 'MD', bg: 'bg-green-500/20', text: 'text-green-400' },
   };
-  const { label, bg, text } = map[ext] ?? { label: ext.toUpperCase() || 'FILE', bg: 'bg-white/10', text: 'text-gray-400' };
+  const { label, bg, text } = map[ext] ?? { label: ext.toUpperCase() || 'FILE', bg: 'bg-surface-light', text: 'text-text-muted' };
   return (
     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${bg} ${text}`}>
       {label}
@@ -116,23 +117,23 @@ function ViewDocumentModal({ materialId, onClose }: { materialId: number; onClos
   }, [materialId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-3xl bg-surface border border-white/10 rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-3xl bg-surface border border-border rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/20 rounded-xl border border-primary/30">
               <FileText className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-lg text-white">{detail?.file_name || 'Loading Document...'}</h2>
+              <h2 className="font-bold text-lg text-text-primary">{detail?.file_name || 'Loading Document...'}</h2>
               {detail && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-text-muted">
                   {detail.college} · Sem {detail.semester} · Reg {detail.regulation} ({detail.chunk_count} RAG chunks)
                 </p>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -141,21 +142,21 @@ function ViewDocumentModal({ materialId, onClose }: { materialId: number; onClos
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
-              <span className="text-gray-300">Reading document chunks from database...</span>
+              <span className="text-text-muted">Reading document chunks from database...</span>
             </div>
           ) : !detail || detail.chunks.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">No content chunks found for this document.</div>
+            <div className="text-center py-12 text-text-muted">No content chunks found for this document.</div>
           ) : (
             <div className="space-y-4">
               {detail.chunks.map((chunk, idx) => (
-                <div key={chunk.id} className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between text-xs text-primary font-semibold border-b border-white/5 pb-2">
+                <div key={chunk.id} className="p-4 bg-surface-light border border-border rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs text-primary font-semibold border-b border-border pb-2">
                     <span className="flex items-center gap-2">
                       <Layers className="w-3.5 h-3.5" /> Chunk #{idx + 1}
                     </span>
                     {chunk.page_number != null && <span>Page {chunk.page_number}</span>}
                   </div>
-                  <p className="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-xs text-text-primary whitespace-pre-wrap leading-relaxed">
                     {chunk.content}
                   </p>
                 </div>
@@ -164,7 +165,7 @@ function ViewDocumentModal({ materialId, onClose }: { materialId: number; onClos
           )}
         </div>
 
-        <div className="flex justify-end p-4 border-t border-white/10">
+        <div className="flex justify-end p-4 border-t border-border">
           <Button variant="ghost" onClick={onClose}>Close Viewer</Button>
         </div>
       </div>
@@ -233,7 +234,7 @@ export default function StudentClassroom() {
   const [generateLoadingIdx, setGenerateLoadingIdx] = useState(0);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [activePlanView, setActivePlanView] = useState<LearningPlan | null>(null);
-  const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
+
 
   // Verification 5-MCQ test states
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -387,9 +388,9 @@ export default function StudentClassroom() {
     try {
       const answersList = Object.entries(assessmentAnswers).map(([qId, ans]) => ({
         question_id: Number(qId),
-        selected_answer: ans,
+        selected_option: ans,
       }));
-      const res = await assessmentApi.submit(assessmentActiveId, { answers: answersList });
+      const res = await assessmentApi.submit({ session_id: String(assessmentActiveId), answers: answersList });
       setAssessmentResultMsg(res.message || 'Assessment successfully completed and scored!');
       setAssessmentStep('result');
       await loadClassroomData();
@@ -443,6 +444,25 @@ export default function StudentClassroom() {
     }
   };
 
+  const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
+  const [startingTaskId, setStartingTaskId] = useState<number | null>(null);
+
+  const handleStartTask = async (taskId: number) => {
+    setStartingTaskId(taskId);
+    try {
+      await learningPlansApi.startTask(taskId);
+      await loadClassroomData();
+      if (activePlanView) {
+        const updated = await learningPlansApi.getPlanById(activePlanView.id);
+        setActivePlanView(updated);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setStartingTaskId(null);
+    }
+  };
+
   const handleCompleteTask = async (taskId: number) => {
     setCompletingTaskId(taskId);
     try {
@@ -487,11 +507,12 @@ export default function StudentClassroom() {
       }));
       const res = await learningPlansApi.submitVerificationTest(activePlanView.id, payload);
       setVerifyResult(res);
-      if (res.passed) {
-        await loadClassroomData();
-        const updated = await learningPlansApi.getPlanById(activePlanView.id);
-        setActivePlanView(updated);
-      }
+      // Always reload data:
+      // - On pass: reflects plan completed status
+      // - On fail: reflects restored (not_started) task statuses
+      await loadClassroomData();
+      const updated = await learningPlansApi.getPlanById(activePlanView.id);
+      setActivePlanView(updated);
     } catch {
       alert('Failed to submit verification test.');
     } finally {
@@ -544,7 +565,7 @@ export default function StudentClassroom() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-gray-400 font-medium">Loading classroom environment...</p>
+        <p className="text-text-muted font-medium">Loading classroom environment...</p>
       </div>
     );
   }
@@ -555,8 +576,8 @@ export default function StudentClassroom() {
         <div className="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-bold text-white">Classroom Access Error</h2>
-        <p className="text-sm text-gray-300">{error || 'Classroom details could not be retrieved.'}</p>
+        <h2 className="text-xl font-bold text-text-primary">Classroom Access Error</h2>
+        <p className="text-sm text-text-muted">{error || 'Classroom details could not be retrieved.'}</p>
         <Button onClick={() => navigate('/student/dashboard')} className="mt-2">
           <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </Button>
@@ -575,13 +596,13 @@ export default function StudentClassroom() {
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate('/student/dashboard')}
-            className="inline-flex items-center text-sm font-medium text-gray-400 hover:text-white transition-colors"
+            className="inline-flex items-center text-sm font-medium text-text-muted hover:text-text-primary transition-colors"
           >
             <ChevronLeft className="w-4 h-4 mr-1" /> Back to Dashboard
           </button>
           <button
             onClick={handleLeaveClass}
-            className="inline-flex items-center text-xs text-gray-400 hover:text-red-400 transition-colors"
+            className="inline-flex items-center text-xs text-text-muted hover:text-red-400 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5 mr-1" /> Leave Classroom
           </button>
@@ -595,16 +616,16 @@ export default function StudentClassroom() {
                 <span className="px-3 py-1 bg-primary/20 text-primary border border-primary/30 rounded-full text-xs font-bold uppercase tracking-wider">
                   Classroom
                 </span>
-                <span className="px-3 py-1 bg-white/10 text-gray-300 border border-white/10 rounded-full text-xs font-semibold">
+                <span className="px-3 py-1 bg-surface-light text-text-muted border border-border rounded-full text-xs font-semibold">
                   {classroom.member_count} Enrolled Student{classroom.member_count === 1 ? '' : 's'}
                 </span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">
                 {classroom.name}
               </h1>
-              <p className="text-sm text-gray-300 flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span>Instructor: <strong className="text-white">{classroom.teacher_name || 'Teacher'}</strong></span>
-                {classroom.college && <span>• College: <strong className="text-white">{classroom.college}</strong></span>}
+              <p className="text-sm text-text-muted flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span>Instructor: <strong className="text-text-primary">{classroom.teacher_name || 'Teacher'}</strong></span>
+                {classroom.college && <span>• College: <strong className="text-text-primary">{classroom.college}</strong></span>}
                 {(classroom.year || classroom.semester || classroom.regulation) && (
                   <span>
                     • {classroom.year && `Yr ${classroom.year} `}
@@ -617,14 +638,14 @@ export default function StudentClassroom() {
             </div>
 
             {/* Class Code Box */}
-            <div className="flex items-center gap-3 bg-black/40 border border-white/15 p-4 rounded-xl shrink-0 backdrop-blur-md">
+            <div className="flex items-center gap-3 bg-background/40 border border-white/15 p-4 rounded-xl shrink-0 backdrop-blur-md">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Classroom Code</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Classroom Code</p>
                 <p className="text-2xl font-mono font-extrabold text-primary tracking-widest">{classroom.code}</p>
               </div>
               <button
                 onClick={handleCopyCode}
-                className="p-2.5 bg-white/10 hover:bg-white/20 text-gray-200 hover:text-white rounded-lg transition-colors"
+                className="p-2.5 bg-surface-light hover:bg-surface-light text-text-primary hover:text-text-primary rounded-lg transition-colors"
                 title="Copy Classroom Code"
               >
                 {copiedCode ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
@@ -634,7 +655,7 @@ export default function StudentClassroom() {
         </div>
 
         {/* ── Navigation Tabs ────────────────────────────────────── */}
-        <div className="flex overflow-x-auto no-scrollbar gap-2 border-b border-white/10 pb-2">
+        <div className="flex overflow-x-auto no-scrollbar gap-2 border-b border-border pb-2">
           {[
             { id: 'overview', label: 'Overview', icon: BookOpen },
             { id: 'materials', label: 'Materials', icon: FileText, count: materials.length },
@@ -653,14 +674,14 @@ export default function StudentClassroom() {
                 onClick={() => setActiveTab(tab.id as TabType)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                    : 'bg-surface hover:bg-surface-light text-gray-400 hover:text-white border border-white/5'
+                    ? 'bg-primary text-text-primary shadow-lg shadow-primary/20'
+                    : 'bg-surface hover:bg-surface-light text-text-muted hover:text-text-primary border border-border'
                 }`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-white/10 text-gray-400'}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-surface-light text-text-primary' : 'bg-surface-light text-text-muted'}`}>
                     {tab.count}
                   </span>
                 )}
@@ -680,8 +701,8 @@ export default function StudentClassroom() {
                     <FileText className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Learning Materials</p>
-                    <p className="text-2xl font-bold text-white mt-0.5">{materials.length} Documents</p>
+                    <p className="text-xs font-medium text-text-muted uppercase tracking-wider">Learning Materials</p>
+                    <p className="text-2xl font-bold text-text-primary mt-0.5">{materials.length} Documents</p>
                   </div>
                 </CardContent>
               </Card>
@@ -692,8 +713,8 @@ export default function StudentClassroom() {
                     <TrendingUp className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Classroom Progress</p>
-                    <p className="text-2xl font-bold text-white mt-0.5">{progressData?.overall_progress_percent ?? 0}%</p>
+                    <p className="text-xs font-medium text-text-muted uppercase tracking-wider">Classroom Progress</p>
+                    <p className="text-2xl font-bold text-text-primary mt-0.5">{progressData?.overall_progress_percent ?? 0}%</p>
                   </div>
                 </CardContent>
               </Card>
@@ -704,8 +725,8 @@ export default function StudentClassroom() {
                     <BrainCircuit className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Skills Tracked</p>
-                    <p className="text-2xl font-bold text-white mt-0.5">{skillsData?.skills.length ?? 0} Skills</p>
+                    <p className="text-xs font-medium text-text-muted uppercase tracking-wider">Skills Tracked</p>
+                    <p className="text-2xl font-bold text-text-primary mt-0.5">{skillsData?.skills.length ?? 0} Skills</p>
                   </div>
                 </CardContent>
               </Card>
@@ -716,8 +737,8 @@ export default function StudentClassroom() {
                     <Award className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Average Competency</p>
-                    <p className="text-2xl font-bold text-white mt-0.5">{progressData?.average_skill_score ?? 0}%</p>
+                    <p className="text-xs font-medium text-text-muted uppercase tracking-wider">Average Competency</p>
+                    <p className="text-2xl font-bold text-text-primary mt-0.5">{progressData?.average_skill_score ?? 0}%</p>
                   </div>
                 </CardContent>
               </Card>
@@ -727,7 +748,7 @@ export default function StudentClassroom() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <Card className="border-primary/20">
-                  <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-white/5">
+                  <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
                     <CardTitle className="text-lg flex items-center">
                       <Sparkles className="w-5 h-5 mr-2 text-primary" /> Active Learning Plan
                     </CardTitle>
@@ -744,8 +765,8 @@ export default function StudentClassroom() {
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="text-xs text-primary font-bold uppercase tracking-wider">{activePlanView.subject}</p>
-                              <h3 className="text-xl font-bold text-white mt-1">{activePlanView.topic}</h3>
-                              <p className="text-xs text-gray-300 mt-1">{activePlanView.learning_goal}</p>
+                              <h3 className="text-xl font-bold text-text-primary mt-1">{activePlanView.topic}</h3>
+                              <p className="text-xs text-text-muted mt-1">{activePlanView.learning_goal}</p>
                             </div>
                             <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${
                               activePlanView.status === 'completed' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'
@@ -756,18 +777,18 @@ export default function StudentClassroom() {
                         </div>
 
                         <div className="space-y-2">
-                          <p className="text-xs font-semibold uppercase text-gray-400">Current Modules</p>
+                          <p className="text-xs font-semibold uppercase text-text-muted">Current Modules</p>
                           {activePlanView.modules.slice(0, 3).map((mod) => (
-                            <div key={mod.id} className="p-3 bg-white/5 border border-white/10 rounded-lg flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-200 truncate">{mod.title}</span>
-                              <span className="text-xs text-gray-400">{mod.tasks.filter((t) => t.is_completed).length}/{mod.tasks.length} Tasks Done</span>
+                            <div key={mod.id} className="p-3 bg-surface-light border border-border rounded-lg flex items-center justify-between">
+                              <span className="text-sm font-medium text-text-primary truncate">{mod.title}</span>
+                              <span className="text-xs text-text-muted">{mod.tasks.filter((t) => t.is_completed).length}/{mod.tasks.length} Tasks Done</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center py-10 border border-dashed border-white/10 rounded-xl space-y-3">
-                        <p className="text-gray-400 text-sm">No active AI learning plan generated for {classroom.name} yet.</p>
+                      <div className="text-center py-10 border border-dashed border-border rounded-xl space-y-3">
+                        <p className="text-text-muted text-sm">No active AI learning plan generated for {classroom.name} yet.</p>
                         <Button onClick={() => setActiveTab('learning_plan')}>
                           <Sparkles className="w-4 h-4 mr-2" /> Generate Learning Plan
                         </Button>
@@ -778,7 +799,7 @@ export default function StudentClassroom() {
 
                 {/* Recent Materials */}
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-white/5">
+                  <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
                     <CardTitle className="text-lg flex items-center">
                       <FileText className="w-5 h-5 mr-2 text-blue-400" /> Recent Classroom Materials
                     </CardTitle>
@@ -792,11 +813,11 @@ export default function StudentClassroom() {
                         {materials.slice(0, 4).map((m) => (
                           <div
                             key={m.id}
-                            className="p-3 bg-surface-light border border-white/5 hover:border-primary/40 rounded-xl flex items-center justify-between transition-colors"
+                            className="p-3 bg-surface-light border border-border hover:border-primary/40 rounded-xl flex items-center justify-between transition-colors"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <FileBadge name={m.file_name} />
-                              <span className="text-sm font-medium text-gray-200 truncate">{m.file_name}</span>
+                              <span className="text-sm font-medium text-text-primary truncate">{m.file_name}</span>
                             </div>
                             <Button size="sm" variant="ghost" onClick={() => setViewingMaterialId(m.id)}>
                               <Eye className="w-3.5 h-3.5 mr-1" /> View
@@ -805,7 +826,7 @@ export default function StudentClassroom() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-500 text-center py-6">No materials uploaded yet for this classroom.</p>
+                      <p className="text-xs text-text-muted text-center py-6">No materials uploaded yet for this classroom.</p>
                     )}
                   </CardContent>
                 </Card>
@@ -814,14 +835,14 @@ export default function StudentClassroom() {
               {/* Right Column: Required Skills & Quick Actions */}
               <div className="space-y-6">
                 <Card>
-                  <CardHeader className="pb-3 border-b border-white/5">
+                  <CardHeader className="pb-3 border-b border-border">
                     <CardTitle className="text-lg flex items-center">
                       <BrainCircuit className="w-5 h-5 mr-2 text-purple-400" /> Required Skills & Gaps
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-4 space-y-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase text-gray-400 mb-2">Subject Competencies</p>
+                      <p className="text-xs font-semibold uppercase text-text-muted mb-2">Subject Competencies</p>
                       <div className="flex flex-wrap gap-1.5">
                         {overview?.required_skills.map((skill, idx) => (
                           <span key={idx} className="text-xs bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2.5 py-1 rounded-md">
@@ -831,19 +852,19 @@ export default function StudentClassroom() {
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-white/5">
-                      <p className="text-xs font-semibold uppercase text-gray-400 mb-2">Your Assessed Skills</p>
+                    <div className="pt-3 border-t border-border">
+                      <p className="text-xs font-semibold uppercase text-text-muted mb-2">Your Assessed Skills</p>
                       {skillsData && skillsData.skills.length > 0 ? (
                         <div className="space-y-2">
                           {skillsData.skills.slice(0, 4).map((s) => (
                             <div key={s.id} className="flex justify-between items-center text-xs">
-                              <span className="text-gray-300 truncate">{s.skill_category}</span>
+                              <span className="text-text-muted truncate">{s.skill_category}</span>
                               <span className="font-bold text-primary">{s.score}%</span>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-gray-500">No skills assessed yet.</p>
+                        <p className="text-xs text-text-muted">No skills assessed yet.</p>
                       )}
                     </div>
 
@@ -857,8 +878,8 @@ export default function StudentClassroom() {
                 <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
                   <CardContent className="p-5 space-y-3 text-center">
                     <MessageSquare className="w-8 h-8 text-primary mx-auto" />
-                    <h4 className="font-bold text-white text-sm">Have a question on {classroom.name}?</h4>
-                    <p className="text-xs text-gray-400">Ask the Classroom AI teaching assistant grounded on your uploaded syllabus and lecture notes.</p>
+                    <h4 className="font-bold text-text-primary text-sm">Have a question on {classroom.name}?</h4>
+                    <p className="text-xs text-text-muted">Ask the Classroom AI teaching assistant grounded on your uploaded syllabus and lecture notes.</p>
                     <Button onClick={() => setActiveTab('ask_ai')} className="w-full text-xs">
                       Ask AI Assistant
                     </Button>
@@ -874,19 +895,19 @@ export default function StudentClassroom() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-white">Classroom Learning Materials</h2>
-                <p className="text-xs text-gray-400 mt-1">
+                <h2 className="text-2xl font-bold text-text-primary">Classroom Learning Materials</h2>
+                <p className="text-xs text-text-muted mt-1">
                   All documents and lecture notes uploaded for {classroom.name} ({classroom.college}, Sem {classroom.semester}, {classroom.regulation}).
                 </p>
               </div>
               <div className="relative w-full sm:w-72">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
                 <input
                   type="text"
                   placeholder="Search materials..."
                   value={materialSearch}
                   onChange={(e) => setMaterialSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-surface border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-primary"
+                  className="w-full pl-9 pr-4 py-2 bg-surface border border-border rounded-xl text-sm text-text-primary focus:outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -899,18 +920,18 @@ export default function StudentClassroom() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <FileBadge name={m.file_name} />
-                          <span className="text-[10px] text-gray-400">{m.chunk_count} RAG Chunks</span>
+                          <span className="text-[10px] text-text-muted">{m.chunk_count} RAG Chunks</span>
                         </div>
-                        <h3 className="font-bold text-base text-white truncate" title={m.file_name}>
+                        <h3 className="font-bold text-base text-text-primary truncate" title={m.file_name}>
                           {m.file_name}
                         </h3>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-text-muted">
                           {m.college} • Sem {m.semester} • Reg {m.regulation}
                         </p>
                       </div>
 
-                      <div className="pt-3 border-t border-white/5 flex justify-between items-center">
-                        <span className="text-[10px] text-gray-500">
+                      <div className="pt-3 border-t border-border flex justify-between items-center">
+                        <span className="text-[10px] text-text-muted">
                           {m.created_at ? new Date(m.created_at).toLocaleDateString() : ''}
                         </span>
                         <Button size="sm" variant="outline" onClick={() => setViewingMaterialId(m.id)}>
@@ -922,9 +943,9 @@ export default function StudentClassroom() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl space-y-3">
-                <FileText className="w-10 h-10 text-gray-500 mx-auto" />
-                <p className="text-gray-400 text-sm">No classroom materials match your query.</p>
+              <div className="text-center py-16 border border-dashed border-border rounded-2xl space-y-3">
+                <FileText className="w-10 h-10 text-text-muted mx-auto" />
+                <p className="text-text-muted text-sm">No classroom materials match your query.</p>
               </div>
             )}
           </div>
@@ -935,8 +956,8 @@ export default function StudentClassroom() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-white">Classroom Skill Competency Tree</h2>
-                <p className="text-xs text-gray-400 mt-1">
+                <h2 className="text-2xl font-bold text-text-primary">Classroom Skill Competency Tree</h2>
+                <p className="text-xs text-text-muted mt-1">
                   Real-time cognitive and domain mastery scores calculated from database diagnostic records.
                 </p>
               </div>
@@ -959,19 +980,19 @@ export default function StudentClassroom() {
                     <Card key={s.id} className={`border ${colors.border}`}>
                       <CardContent className="p-5 space-y-4">
                         <div className="flex justify-between items-start">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${colors.text} bg-white/5 border ${colors.border}`}>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${colors.text} bg-surface-light border ${colors.border}`}>
                             {cfg.level}
                           </span>
-                          <span className="text-xl font-bold text-white">{Math.round(s.score)}%</span>
+                          <span className="text-xl font-bold text-text-primary">{Math.round(s.score)}%</span>
                         </div>
 
-                        <h4 className="font-bold text-base text-white">{s.skill_category}</h4>
+                        <h4 className="font-bold text-base text-text-primary">{s.skill_category}</h4>
 
-                        <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-background/40 h-2 rounded-full overflow-hidden">
                           <div className={`h-full ${colors.bg} rounded-full transition-all duration-500`} style={{ width: `${s.score}%` }} />
                         </div>
 
-                        <p className="text-[10px] text-gray-500">
+                        <p className="text-[10px] text-text-muted">
                           Last evaluated: {s.last_updated ? new Date(s.last_updated).toLocaleDateString() : 'N/A'}
                         </p>
                       </CardContent>
@@ -980,9 +1001,9 @@ export default function StudentClassroom() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl space-y-3">
-                <BrainCircuit className="w-10 h-10 text-gray-500 mx-auto" />
-                <p className="text-gray-400 text-sm">No skill scores recorded yet for this student.</p>
+              <div className="text-center py-16 border border-dashed border-border rounded-2xl space-y-3">
+                <BrainCircuit className="w-10 h-10 text-text-muted mx-auto" />
+                <p className="text-text-muted text-sm">No skill scores recorded yet for this student.</p>
                 <Button onClick={() => setActiveTab('assessment')}>Take Diagnostic Assessment</Button>
               </div>
             )}
@@ -999,16 +1020,16 @@ export default function StudentClassroom() {
                     <Brain className="w-8 h-8" />
                   </div>
                   <CardTitle className="text-2xl font-bold">Classroom Knowledge Assessment</CardTitle>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-text-muted mt-1">
                     Evaluate your cognitive dimensions and technical understanding for {classroom.name}.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {['Numerical Calculation', 'Abstract Thinking', 'Logical Reasoning', 'Association/Analogy', 'Spatial Imagination', `${classroom.name} Fundamentals`].map((cat, i) => (
-                      <div key={i} className="p-3 bg-surface-light border border-white/5 rounded-xl flex items-center gap-2.5">
+                      <div key={i} className="p-3 bg-surface-light border border-border rounded-xl flex items-center gap-2.5">
                         <Zap className="w-4 h-4 text-primary shrink-0" />
-                        <span className="text-xs font-semibold text-gray-200">{cat}</span>
+                        <span className="text-xs font-semibold text-text-primary">{cat}</span>
                       </div>
                     ))}
                   </div>
@@ -1025,13 +1046,13 @@ export default function StudentClassroom() {
 
             {assessmentStep === 'active' && assessmentQuestions.length > 0 && (
               <Card>
-                <CardHeader className="pb-3 border-b border-white/5">
-                  <div className="flex justify-between items-center text-xs text-gray-400">
+                <CardHeader className="pb-3 border-b border-border">
+                  <div className="flex justify-between items-center text-xs text-text-muted">
                     <span className="font-semibold text-primary uppercase">{assessmentQuestions[currentQuestionIdx]?.skill_category}</span>
                     <span>Question {currentQuestionIdx + 1} of {assessmentQuestions.length}</span>
                   </div>
-                  <CardTitle className="text-lg mt-2 text-white leading-relaxed">
-                    {assessmentQuestions[currentQuestionIdx]?.text}
+                  <CardTitle className="text-lg mt-2 text-text-primary leading-relaxed">
+                    {assessmentQuestions[currentQuestionIdx]?.question_text}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-6">
@@ -1045,8 +1066,8 @@ export default function StudentClassroom() {
                           onClick={() => setAssessmentAnswers({ ...assessmentAnswers, [qId]: opt })}
                           className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between ${
                             isSelected
-                              ? 'bg-primary/20 border-primary text-white'
-                              : 'bg-surface-light border-white/5 hover:border-white/20 text-gray-300'
+                              ? 'bg-primary/20 border-primary text-text-primary'
+                              : 'bg-surface-light border-border hover:border-border text-text-muted'
                           }`}
                         >
                           <span className="text-sm">{opt}</span>
@@ -1056,7 +1077,7 @@ export default function StudentClassroom() {
                     })}
                   </div>
 
-                  <div className="flex justify-between items-center pt-4 border-t border-white/5">
+                  <div className="flex justify-between items-center pt-4 border-t border-border">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1094,8 +1115,8 @@ export default function StudentClassroom() {
                 <div className="w-16 h-16 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <h3 className="text-2xl font-bold text-white">Assessment Complete!</h3>
-                <p className="text-sm text-gray-300">{assessmentResultMsg}</p>
+                <h3 className="text-2xl font-bold text-text-primary">Assessment Complete!</h3>
+                <p className="text-sm text-text-muted">{assessmentResultMsg}</p>
                 <div className="pt-2 flex justify-center gap-3">
                   <Button onClick={() => setAssessmentStep('intro')} variant="outline">
                     Take Another Assessment
@@ -1116,11 +1137,11 @@ export default function StudentClassroom() {
               {/* Left Column: Generate Form */}
               <div className="space-y-6">
                 <Card>
-                  <CardHeader className="pb-3 border-b border-white/5">
+                  <CardHeader className="pb-3 border-b border-border">
                     <CardTitle className="text-lg flex items-center">
                       <Sparkles className="w-5 h-5 mr-2 text-primary" /> Generate Plan
                     </CardTitle>
-                    <p className="text-xs text-gray-400 mt-1">Multi-Agent workflow: Analyst → Optimizer → Evaluator grounded with ChromaDB RAG.</p>
+                    <p className="text-xs text-text-muted mt-1">Multi-Agent workflow: Analyst → Optimizer → Evaluator grounded with ChromaDB RAG.</p>
                   </CardHeader>
                   <CardContent className="pt-4">
                     <form onSubmit={handleGeneratePlanSubmit} className="space-y-4">
@@ -1131,13 +1152,13 @@ export default function StudentClassroom() {
                       )}
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
                           Select Curriculum Topic
                         </label>
                         <select
                           value={selectedTopic}
                           onChange={(e) => setSelectedTopic(e.target.value)}
-                          className="w-full bg-surface-light border border-white/10 focus:border-primary rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none"
+                          className="w-full bg-surface-light border border-border focus:border-primary rounded-xl px-3 py-2.5 text-sm text-text-primary focus:outline-none"
                         >
                           <option value="">-- Choose from Curriculum --</option>
                           {curriculum?.units.flatMap((u) =>
@@ -1190,7 +1211,7 @@ export default function StudentClassroom() {
 
                 {/* Saved Plans for this Classroom */}
                 <Card>
-                  <CardHeader className="pb-3 border-b border-white/5">
+                  <CardHeader className="pb-3 border-b border-border">
                     <CardTitle className="text-base flex items-center">
                       <BookOpen className="w-4 h-4 mr-2 text-blue-400" /> Saved Plans ({learningPlans.length})
                     </CardTitle>
@@ -1203,19 +1224,19 @@ export default function StudentClassroom() {
                           onClick={() => setActivePlanView(lp)}
                           className={`w-full text-left p-3 rounded-xl border transition-all ${
                             activePlanView?.id === lp.id
-                              ? 'bg-primary/20 border-primary text-white'
-                              : 'bg-surface-light border-white/5 hover:border-white/20 text-gray-300'
+                              ? 'bg-primary/20 border-primary text-text-primary'
+                              : 'bg-surface-light border-border hover:border-border text-text-muted'
                           }`}
                         >
                           <p className="font-semibold text-xs truncate">{lp.topic}</p>
-                          <div className="flex justify-between items-center text-[10px] text-gray-400 mt-1">
+                          <div className="flex justify-between items-center text-[10px] text-text-muted mt-1">
                             <span className="capitalize">{lp.status}</span>
                             <span>{lp.modules.length} Modules</span>
                           </div>
                         </button>
                       ))
                     ) : (
-                      <p className="text-xs text-gray-500 text-center py-4">No plans created yet.</p>
+                      <p className="text-xs text-text-muted text-center py-4">No plans created yet.</p>
                     )}
                   </CardContent>
                 </Card>
@@ -1225,7 +1246,7 @@ export default function StudentClassroom() {
               <div className="lg:col-span-2 space-y-6">
                 {activePlanView ? (
                   <Card className="border-primary/20">
-                    <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-white/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-primary uppercase">{activePlanView.subject}</span>
@@ -1235,7 +1256,7 @@ export default function StudentClassroom() {
                             {activePlanView.status}
                           </span>
                         </div>
-                        <CardTitle className="text-xl font-bold mt-1 text-white">{activePlanView.topic}</CardTitle>
+                        <CardTitle className="text-xl font-bold mt-1 text-text-primary">{activePlanView.topic}</CardTitle>
                       </div>
                       {activePlanView.status !== 'completed' && (
                         <Button size="sm" onClick={handleStartVerification} className="gap-1.5">
@@ -1245,54 +1266,27 @@ export default function StudentClassroom() {
                       )}
                     </CardHeader>
                     <CardContent className="pt-6 space-y-6">
-                      <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                        <p className="text-xs text-gray-400 uppercase font-semibold">Goal Description</p>
-                        <p className="text-sm text-gray-200 mt-1">{activePlanView.learning_goal}</p>
+                      <div className="p-4 bg-surface-light rounded-xl border border-border">
+                        <p className="text-xs text-text-muted uppercase font-semibold">Goal Description</p>
+                        <p className="text-sm text-text-primary mt-1">{activePlanView.learning_goal}</p>
                       </div>
 
                       {/* Modules & Task Checkboxes */}
                       <div className="space-y-6">
                         {activePlanView.modules.map((mod) => (
                           <div key={mod.id} className="space-y-3">
-                            <h4 className="font-bold text-sm text-gray-200 border-b border-white/10 pb-2">
+                            <h4 className="font-bold text-sm text-text-primary border-b border-border pb-2">
                               {mod.title}
                             </h4>
                             <div className="space-y-2">
                               {mod.tasks.map((task) => (
-                                <div
+                                <LearningTaskItem
                                   key={task.id}
-                                  className={`p-3.5 rounded-xl border flex items-center justify-between transition-colors ${
-                                    task.is_completed
-                                      ? 'bg-green-500/10 border-green-500/20'
-                                      : 'bg-surface-light border-white/5'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    {task.is_completed ? (
-                                      <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
-                                    ) : (
-                                      <div className="w-5 h-5 rounded-full border-2 border-gray-500 shrink-0" />
-                                    )}
-                                    <div>
-                                      <p className={`text-xs font-semibold ${task.is_completed ? 'line-through text-gray-400' : 'text-gray-200'}`}>
-                                        {task.title}
-                                      </p>
-                                      <p className="text-[10px] text-gray-500 capitalize">{task.task_type}</p>
-                                    </div>
-                                  </div>
-
-                                  {!task.is_completed && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      disabled={completingTaskId === task.id}
-                                      onClick={() => handleCompleteTask(task.id)}
-                                      className="text-xs"
-                                    >
-                                      {completingTaskId === task.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Done'}
-                                    </Button>
-                                  )}
-                                </div>
+                                  task={task}
+                                  onStart={handleStartTask}
+                                  onComplete={handleCompleteTask}
+                                  isLoading={completingTaskId === task.id || startingTaskId === task.id}
+                                />
                               ))}
                             </div>
                           </div>
@@ -1303,9 +1297,9 @@ export default function StudentClassroom() {
                 ) : (
                   <Card className="border-dashed border-white/15 bg-transparent text-center py-16">
                     <CardContent className="space-y-3">
-                      <Sparkles className="w-10 h-10 text-gray-500 mx-auto" />
-                      <h3 className="font-bold text-base text-gray-300">No Learning Plan Selected</h3>
-                      <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                      <Sparkles className="w-10 h-10 text-text-muted mx-auto" />
+                      <h3 className="font-bold text-base text-text-muted">No Learning Plan Selected</h3>
+                      <p className="text-xs text-text-muted max-w-sm mx-auto">
                         Choose a topic on the left to generate a personalized AI plan with the multi-agent system.
                       </p>
                     </CardContent>
@@ -1323,16 +1317,16 @@ export default function StudentClassroom() {
               <Card className="bg-gradient-to-br from-green-500/20 to-transparent border-green-500/30">
                 <CardContent className="p-6">
                   <TrendingUp className="w-8 h-8 text-green-400 mb-2" />
-                  <p className="text-xs font-medium text-gray-400 uppercase">Overall Progress</p>
-                  <p className="text-3xl font-bold text-white mt-1">{progressData?.overall_progress_percent ?? 0}%</p>
+                  <p className="text-xs font-medium text-text-muted uppercase">Overall Progress</p>
+                  <p className="text-3xl font-bold text-text-primary mt-1">{progressData?.overall_progress_percent ?? 0}%</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-blue-500/20 to-transparent border-blue-500/30">
                 <CardContent className="p-6">
                   <CheckCircle2 className="w-8 h-8 text-blue-400 mb-2" />
-                  <p className="text-xs font-medium text-gray-400 uppercase">Tasks Completed</p>
-                  <p className="text-3xl font-bold text-white mt-1">
+                  <p className="text-xs font-medium text-text-muted uppercase">Tasks Completed</p>
+                  <p className="text-3xl font-bold text-text-primary mt-1">
                     {progressData?.completed_tasks ?? 0}/{progressData?.total_tasks ?? 0}
                   </p>
                 </CardContent>
@@ -1341,32 +1335,32 @@ export default function StudentClassroom() {
               <Card className="bg-gradient-to-br from-purple-500/20 to-transparent border-purple-500/30">
                 <CardContent className="p-6">
                   <Award className="w-8 h-8 text-purple-400 mb-2" />
-                  <p className="text-xs font-medium text-gray-400 uppercase">Plans Mastered</p>
-                  <p className="text-3xl font-bold text-white mt-1">{progressData?.plans_completed ?? 0}</p>
+                  <p className="text-xs font-medium text-text-muted uppercase">Plans Mastered</p>
+                  <p className="text-3xl font-bold text-text-primary mt-1">{progressData?.plans_completed ?? 0}</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-yellow-500/20 to-transparent border-yellow-500/30">
                 <CardContent className="p-6">
                   <Brain className="w-8 h-8 text-yellow-400 mb-2" />
-                  <p className="text-xs font-medium text-gray-400 uppercase">Assessments Taken</p>
-                  <p className="text-3xl font-bold text-white mt-1">{progressData?.assessments_completed_count ?? 0}</p>
+                  <p className="text-xs font-medium text-text-muted uppercase">Assessments Taken</p>
+                  <p className="text-3xl font-bold text-text-primary mt-1">{progressData?.assessments_completed_count ?? 0}</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Detailed Progress Breakdown */}
             <Card>
-              <CardHeader className="pb-3 border-b border-white/5">
+              <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="text-lg">Classroom Completion Breakdown</CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-gray-300">Task Completion Rate</span>
+                    <span className="text-text-muted">Task Completion Rate</span>
                     <span className="text-primary">{progressData?.overall_progress_percent ?? 0}%</span>
                   </div>
-                  <div className="w-full bg-black/40 h-3 rounded-full overflow-hidden">
+                  <div className="w-full bg-background/40 h-3 rounded-full overflow-hidden">
                     <div
                       className="bg-primary h-full rounded-full transition-all duration-1000"
                       style={{ width: `${progressData?.overall_progress_percent ?? 0}%` }}
@@ -1376,10 +1370,10 @@ export default function StudentClassroom() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-gray-300">Average Competency Score</span>
+                    <span className="text-text-muted">Average Competency Score</span>
                     <span className="text-yellow-400">{progressData?.average_skill_score ?? 0}%</span>
                   </div>
-                  <div className="w-full bg-black/40 h-3 rounded-full overflow-hidden">
+                  <div className="w-full bg-background/40 h-3 rounded-full overflow-hidden">
                     <div
                       className="bg-yellow-400 h-full rounded-full transition-all duration-1000"
                       style={{ width: `${progressData?.average_skill_score ?? 0}%` }}
@@ -1395,16 +1389,16 @@ export default function StudentClassroom() {
         {activeTab === 'ask_ai' && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <Card className="flex flex-col h-[70vh] border-primary/20">
-              <CardHeader className="py-4 border-b border-white/10 flex flex-row items-center justify-between">
+              <CardHeader className="py-4 border-b border-border flex flex-row items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/20 text-primary rounded-xl border border-primary/30">
                     <MessageSquare className="w-5 h-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-base font-bold text-white">
+                    <CardTitle className="text-base font-bold text-text-primary">
                       Classroom AI Assistant: {classroom.name}
                     </CardTitle>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-text-muted">
                       Grounded strictly on {materials.length} uploaded classroom materials via ChromaDB RAG.
                     </p>
                   </div>
@@ -1416,8 +1410,8 @@ export default function StudentClassroom() {
                 {chatMessages.length === 0 ? (
                   <div className="text-center py-16 space-y-3">
                     <HelpCircle className="w-12 h-12 text-gray-600 mx-auto" />
-                    <h3 className="font-bold text-base text-gray-300">Ask any question about {classroom.name}</h3>
-                    <p className="text-xs text-gray-500 max-w-md mx-auto">
+                    <h3 className="font-bold text-base text-text-muted">Ask any question about {classroom.name}</h3>
+                    <p className="text-xs text-text-muted max-w-md mx-auto">
                       "Explain the key concepts in Chapter 1", "How do these algorithms work?", or "Summarize the required assignments."
                     </p>
                   </div>
@@ -1430,8 +1424,8 @@ export default function StudentClassroom() {
                       <div
                         className={`max-w-2xl p-4 rounded-2xl text-sm leading-relaxed ${
                           msg.sender === 'user'
-                            ? 'bg-primary text-white rounded-tr-none'
-                            : 'bg-surface-light border border-white/10 text-gray-200 rounded-tl-none space-y-3'
+                            ? 'bg-primary text-text-primary rounded-tr-none'
+                            : 'bg-surface-light border border-border text-text-primary rounded-tl-none space-y-3'
                         }`}
                       >
                         {msg.sender === 'ai' && (
@@ -1441,7 +1435,7 @@ export default function StudentClassroom() {
                                 <FileText className="w-3 h-3" /> Grounded in Classroom Materials
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-text-muted bg-surface-light border border-border px-2 py-0.5 rounded-full">
                                 General Academic Guidance
                               </span>
                             )}
@@ -1452,21 +1446,21 @@ export default function StudentClassroom() {
 
                         {/* Sources snippet */}
                         {msg.sources && msg.sources.length > 0 && (
-                          <div className="pt-3 border-t border-white/10 space-y-1.5">
-                            <p className="text-[10px] font-bold uppercase text-gray-400">Referenced Documents:</p>
+                          <div className="pt-3 border-t border-border space-y-1.5">
+                            <p className="text-[10px] font-bold uppercase text-text-muted">Referenced Documents:</p>
                             <div className="grid gap-1.5">
                               {msg.sources.map((src, i) => (
-                                <div key={i} className="p-2 bg-black/40 rounded-lg border border-white/5 text-xs text-gray-300">
+                                <div key={i} className="p-2 bg-background/40 rounded-lg border border-border text-xs text-text-muted">
                                   <span className="font-semibold text-primary">{src.file_name}</span>
-                                  {src.page_number && <span className="text-gray-400"> (Page {src.page_number})</span>}
-                                  <p className="text-[11px] text-gray-400 mt-0.5 truncate">{src.content_snippet}</p>
+                                  {src.page_number && <span className="text-text-muted"> (Page {src.page_number})</span>}
+                                  <p className="text-[11px] text-text-muted mt-0.5 truncate">{src.content_snippet}</p>
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] text-gray-500 mt-1 px-1">
+                      <span className="text-[10px] text-text-muted mt-1 px-1">
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -1474,7 +1468,7 @@ export default function StudentClassroom() {
                 )}
 
                 {isAskingAI && (
-                  <div className="flex items-center gap-2 text-xs text-primary p-3 bg-surface-light border border-white/10 rounded-2xl w-fit">
+                  <div className="flex items-center gap-2 text-xs text-primary p-3 bg-surface-light border border-border rounded-2xl w-fit">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Retrieving classroom materials & synthesizing response...</span>
                   </div>
@@ -1483,7 +1477,7 @@ export default function StudentClassroom() {
               </CardContent>
 
               {/* Chat Input */}
-              <div className="p-4 border-t border-white/10 bg-surface">
+              <div className="p-4 border-t border-border bg-surface">
                 <form onSubmit={handleSendQuestion} className="flex gap-2">
                   <input
                     type="text"
@@ -1491,7 +1485,7 @@ export default function StudentClassroom() {
                     value={inputQuestion}
                     onChange={(e) => setInputQuestion(e.target.value)}
                     disabled={isAskingAI}
-                    className="flex-1 bg-surface-light border border-white/10 focus:border-primary rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
+                    className="flex-1 bg-surface-light border border-border focus:border-primary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none"
                   />
                   <Button type="submit" disabled={isAskingAI || !inputQuestion.trim()}>
                     <Send className="w-4 h-4" />
@@ -1506,39 +1500,39 @@ export default function StudentClassroom() {
         {activeTab === 'info' && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <Card>
-              <CardHeader className="pb-3 border-b border-white/5">
+              <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="text-lg">Instructor & Course Information</CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-surface-light rounded-xl border border-white/5 space-y-1">
-                    <p className="text-xs text-gray-400 font-semibold uppercase">Instructor</p>
-                    <p className="text-base font-bold text-white">{classroom.teacher_name || 'Instructor'}</p>
+                  <div className="p-4 bg-surface-light rounded-xl border border-border space-y-1">
+                    <p className="text-xs text-text-muted font-semibold uppercase">Instructor</p>
+                    <p className="text-base font-bold text-text-primary">{classroom.teacher_name || 'Instructor'}</p>
                     {classroom.teacher_email && <p className="text-xs text-primary">{classroom.teacher_email}</p>}
                   </div>
 
-                  <div className="p-4 bg-surface-light rounded-xl border border-white/5 space-y-1">
-                    <p className="text-xs text-gray-400 font-semibold uppercase">Classroom Code</p>
+                  <div className="p-4 bg-surface-light rounded-xl border border-border space-y-1">
+                    <p className="text-xs text-text-muted font-semibold uppercase">Classroom Code</p>
                     <p className="text-base font-mono font-bold text-primary">{classroom.code}</p>
-                    <p className="text-xs text-gray-500">Share this code with eligible students.</p>
+                    <p className="text-xs text-text-muted">Share this code with eligible students.</p>
                   </div>
 
-                  <div className="p-4 bg-surface-light rounded-xl border border-white/5 space-y-1">
-                    <p className="text-xs text-gray-400 font-semibold uppercase">Institution</p>
-                    <p className="text-base font-bold text-white">{classroom.college || 'N/A'}</p>
+                  <div className="p-4 bg-surface-light rounded-xl border border-border space-y-1">
+                    <p className="text-xs text-text-muted font-semibold uppercase">Institution</p>
+                    <p className="text-base font-bold text-text-primary">{classroom.college || 'N/A'}</p>
                   </div>
 
-                  <div className="p-4 bg-surface-light rounded-xl border border-white/5 space-y-1">
-                    <p className="text-xs text-gray-400 font-semibold uppercase">Academic Term</p>
-                    <p className="text-base font-bold text-white">
+                  <div className="p-4 bg-surface-light rounded-xl border border-border space-y-1">
+                    <p className="text-xs text-text-muted font-semibold uppercase">Academic Term</p>
+                    <p className="text-base font-bold text-text-primary">
                       {classroom.year ? `Year ${classroom.year}` : ''} {classroom.semester ? `• Sem ${classroom.semester}` : ''} {classroom.regulation ? `(${classroom.regulation})` : ''}
                     </p>
                   </div>
                 </div>
 
-                <div className="p-4 bg-surface-light rounded-xl border border-white/5 space-y-2 mt-4">
-                  <p className="text-xs text-gray-400 font-semibold uppercase">Announcements & Notices</p>
-                  <p className="text-xs text-gray-300 leading-relaxed">
+                <div className="p-4 bg-surface-light rounded-xl border border-border space-y-2 mt-4">
+                  <p className="text-xs text-text-muted font-semibold uppercase">Announcements & Notices</p>
+                  <p className="text-xs text-text-muted leading-relaxed">
                     Welcome to {classroom.name}! Make sure to explore the Materials tab for uploaded lecture documents, test your competency in the Skills tab, and generate your personalized AI Learning Plan.
                   </p>
                 </div>
@@ -1550,11 +1544,11 @@ export default function StudentClassroom() {
 
       {/* ── Add Custom Skill Modal ───────────────────────────────── */}
       {showAddSkillModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-surface border border-white/10 rounded-2xl p-6 space-y-6 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <h2 className="font-bold text-lg text-white">Add Custom Skill</h2>
-              <button onClick={() => setShowAddSkillModal(false)} className="text-gray-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-6 space-y-6 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-border pb-4">
+              <h2 className="font-bold text-lg text-text-primary">Add Custom Skill</h2>
+              <button onClick={() => setShowAddSkillModal(false)} className="text-text-muted hover:text-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1581,17 +1575,17 @@ export default function StudentClassroom() {
 
       {/* ── Verification 5-MCQ Test Modal ────────────────────────── */}
       {showVerifyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-surface border border-white/10 rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setShowVerifyModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm">
+          <div className="bg-surface border border-border rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowVerifyModal(false)} className="absolute top-4 right-4 text-text-muted hover:text-text-primary">
               <X className="w-5 h-5" />
             </button>
 
             <div>
-              <h2 className="text-2xl font-bold text-white flex items-center">
+              <h2 className="text-2xl font-bold text-text-primary flex items-center">
                 <Award className="w-6 h-6 mr-2 text-yellow-400" /> Path Verification Test
               </h2>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-text-muted mt-1">
                 Answer 5 questions to verify mastery of {activePlanView?.topic}. Pass mark: 60% (3/5 correct).
               </p>
             </div>
@@ -1599,7 +1593,7 @@ export default function StudentClassroom() {
             {isLoadingVerify ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-3">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-sm text-gray-400">Generating verification questions from curriculum...</p>
+                <p className="text-sm text-text-muted">Generating verification questions from curriculum...</p>
               </div>
             ) : verifyResult ? (
               <div className="space-y-6 py-4">
@@ -1621,8 +1615,8 @@ export default function StudentClassroom() {
             ) : (
               <div className="space-y-6">
                 {verifyQuestions.map((q, idx) => (
-                  <div key={q.id} className="p-4 bg-surface-light border border-white/5 rounded-xl space-y-3">
-                    <p className="font-semibold text-sm text-gray-200">
+                  <div key={q.id} className="p-4 bg-surface-light border border-border rounded-xl space-y-3">
+                    <p className="font-semibold text-sm text-text-primary">
                       {idx + 1}. {q.question_text}
                     </p>
                     <div className="space-y-2">
@@ -1631,8 +1625,8 @@ export default function StudentClassroom() {
                           key={oIdx}
                           className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
                             verifyAnswers[q.id] === opt
-                              ? 'bg-primary/20 border-primary text-white'
-                              : 'bg-white/5 border-white/5 hover:border-white/20 text-gray-300'
+                              ? 'bg-primary/20 border-primary text-text-primary'
+                              : 'bg-surface-light border-border hover:border-border text-text-muted'
                           }`}
                         >
                           <input
@@ -1651,7 +1645,7 @@ export default function StudentClassroom() {
                   </div>
                 ))}
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <div className="flex justify-end gap-3 pt-4 border-t border-border">
                   <Button variant="outline" onClick={() => setShowVerifyModal(false)}>
                     Cancel
                   </Button>

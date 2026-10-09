@@ -5,9 +5,15 @@ export interface LearningTask {
   module_id: number;
   title: string;
   description?: string;
+  objectives?: string;
+  skills?: string;
+  estimated_time: number;
+  difficulty: string;
+  learning_outcome?: string;
   task_type: string;
   order_index: number;
   is_completed: boolean;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -83,6 +89,15 @@ export const learningPlansApi = {
    */
   getPlanById: async (planId: number): Promise<LearningPlan> => {
     const response = await apiClient.get<LearningPlan>(`/learning-plans/${planId}`);
+    return response.data;
+  },
+
+  /**
+   * Mark a learning task as in_progress.
+   * Endpoint: PATCH /api/learning-plans/tasks/:taskId/start
+   */
+  startTask: async (taskId: number): Promise<LearningTask> => {
+    const response = await apiClient.patch<LearningTask>(`/learning-plans/tasks/${taskId}/start`);
     return response.data;
   },
 

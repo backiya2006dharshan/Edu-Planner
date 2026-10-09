@@ -84,10 +84,12 @@ def get_chroma_collection() -> Any:
     return client.get_or_create_collection("college_materials")
 
 
-def material_metadata(*, college: str, semester: str, regulation: str, year: str | None = None, document_id: int | None = None, page_number: int | None = None) -> dict[str, str | int]:
+def material_metadata(*, college: str, semester: str, regulation: str, year: str | None = None, class_id: int | None = None, document_id: int | None = None, page_number: int | None = None) -> dict[str, str | int]:
     metadata: dict[str, str | int] = {"college": college.strip(), "semester": str(semester).strip(), "regulation": str(regulation).strip()}
     if year:
         metadata["year"] = str(year).strip()
+    if class_id is not None:
+        metadata["class_id"] = class_id
     if document_id is not None:
         metadata["document_id"] = document_id
     if page_number is not None:
@@ -95,7 +97,7 @@ def material_metadata(*, college: str, semester: str, regulation: str, year: str
     return metadata
 
 
-def index_chunks(chunks: list[ParsedChunk], *, college: str, semester: str, regulation: str, year: str | None = None, document_id: int, content_hash: str) -> list[str]:
+def index_chunks(chunks: list[ParsedChunk], *, college: str, semester: str, regulation: str, year: str | None = None, class_id: int | None = None, document_id: int, content_hash: str) -> list[str]:
     if not chunks:
         return []
     ids = [f"{content_hash}:{index}" for index in range(len(chunks))]
@@ -104,23 +106,27 @@ def index_chunks(chunks: list[ParsedChunk], *, college: str, semester: str, regu
         ids=ids,
         documents=[chunk.content for chunk in chunks],
         embeddings=embeddings,
-        metadatas=[material_metadata(college=college, semester=semester, regulation=regulation, year=year, document_id=document_id, page_number=chunk.page_number) for chunk in chunks],
+        metadatas=[material_metadata(college=college, semester=semester, regulation=regulation, year=year, class_id=class_id, document_id=document_id, page_number=chunk.page_number) for chunk in chunks],
     )
     return ids
 
 
-def search_chunks(query: str, *, college: str, semester: str, regulation: str, year: str | None = None, limit: int = 5) -> dict[str, list[list[Any]]]:
+def search_chunks(query: str, *, college: str, semester: str, regulation: str, year: str | None = None, class_id: int | None = None, limit: int = 5) -> dict[str, list[list[Any]]]:
     embedding = get_embedding_model().encode([query], normalize_embeddings=True).tolist()
     
     filters = []
-    if college:
+    if class_id:
+        filters.append({"class_id": class_id})
+    elif college:
         filters.append({"college": college.strip()})
-    if semester:
-        filters.append({"semester": str(semester).strip()})
-    if regulation:
-        filters.append({"regulation": str(regulation).strip()})
-    if year:
-        filters.append({"year": str(year).strip()})
+    
+    if not class_id:
+        if semester:
+            filters.append({"semester": str(semester).strip()})
+        if regulation:
+            filters.append({"regulation": str(regulation).strip()})
+        if year:
+            filters.append({"year": str(year).strip()})
 
     where_clause = {"$and": filters} if len(filters) > 1 else (filters[0] if filters else None)
     

@@ -1,20 +1,75 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0a0a0a;
-  --color-surface: #171717;
-  --color-primary: #3b82f6;
-  --color-secondary: #8b5cf6;
+  --color-background: var(--bg-color);
+  --color-surface: var(--surface-color);
+  --color-surface-light: var(--surface-light-color);
+  --color-primary: #4F7EFF;
+  --color-secondary: #22D3A0;
+  --color-warning: #FFB547;
+  --color-alert: #FF6B6B;
+  --color-text-primary: var(--text-color);
+  --color-text-muted: var(--text-muted-color);
+  --color-border: var(--border-color);
+}
+
+@layer base {
+  :root.light {
+    --bg-color: #F8FAFC;
+    --surface-color: #FFFFFF;
+    --surface-light-color: #F1F5F9;
+    --text-color: #0F1729;
+    --text-muted-color: #475569;
+    --border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  :root.dark {
+    --bg-color: #0F1729;
+    --surface-color: #050505;
+    --surface-light-color: rgba(255, 255, 255, 0.05);
+    --text-color: #F0F4FF;
+    --text-muted-color: #8B9CC8;
+    --border-color: rgba(255, 255, 255, 0.15);
+  }
 }
 
 @layer base {
   body {
-    @apply bg-background text-gray-100 antialiased selection:bg-primary selection:text-white min-h-screen overflow-x-hidden;
+    @apply bg-background text-text-primary antialiased selection:bg-primary selection:text-white min-h-screen overflow-x-hidden cursor-default;
+    font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
+  }
+
+  /* Force default cursor on common text tags */
+  p, span, div, h1, h2, h3, h4, h5, h6, label, ul, li, nav, aside, section, article {
+    @apply cursor-default;
+  }
+
+  /* Prevent text selection on standard UI components */
+  h1, h2, h3, h4, h5, h6, label, nav, .sidebar {
+    @apply select-none;
+  }
+
+  /* Ensure interactive elements have pointer */
+  a, button, select, [role="button"], summary, [type="button"], [type="submit"], [type="reset"] {
+    @apply cursor-pointer;
+  }
+
+  /* Preserve selection and text cursor on inputs */
+  input, textarea, [contenteditable="true"] {
+    @apply cursor-text select-auto;
   }
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-surface/70 backdrop-blur-md border border-white/10 shadow-2xl;
+    @apply bg-surface/90 backdrop-blur-xl border border-primary/15 shadow-[0_8px_32px_rgba(0,0,0,0.3)] rounded-2xl transition-all duration-300;
+  }
+  
+  .glass-card:hover {
+    @apply shadow-[0_12px_40px_rgba(79,126,255,0.15)] -translate-y-1;
+  }
+  
+  .btn-gradient {
+    @apply bg-gradient-to-r from-[#4F7EFF] to-[#6B3FFF] text-white transition-all duration-300 hover:shadow-[0_0_15px_rgba(79,126,255,0.5)];
   }
 }
