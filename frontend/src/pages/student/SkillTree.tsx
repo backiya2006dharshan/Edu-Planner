@@ -58,24 +58,24 @@ function SkillCard({ skill, onEdit }: { skill: Skill; onEdit: (s: Skill) => void
 
       <CardContent className="pt-6 pb-5">
         <div className="flex justify-between items-start mb-5">
-          <div className={`p-2.5 rounded-xl border ${cls.border} bg-white/5`}>
+          <div className={`p-2.5 rounded-xl border ${cls.border} bg-surface-light`}>
             <Icon className={`w-5 h-5 ${cls.text}`} />
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => onEdit(skill)}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg bg-surface-light hover:bg-surface-light text-text-muted hover:text-text-primary transition-colors"
               title="Update Skill Score"
             >
               <Edit3 className="w-3.5 h-3.5" />
             </button>
-            <span className={`text-xs font-bold uppercase tracking-widest ${cls.text} px-2 py-1 rounded-full bg-white/5 border ${cls.border}`}>
+            <span className={`text-xs font-bold uppercase tracking-widest ${cls.text} px-2 py-1 rounded-full bg-surface-light border ${cls.border}`}>
               {level}
             </span>
           </div>
         </div>
 
-        <h3 className="font-bold text-base mb-4 text-white">{skill.skill_category}</h3>
+        <h3 className="font-bold text-base mb-4 text-text-primary">{skill.skill_category}</h3>
 
         <div className="flex items-center gap-4">
           <div className="relative w-20 h-20 shrink-0">
@@ -91,19 +91,19 @@ function SkillCard({ skill, onEdit }: { skill: Skill; onEdit: (s: Skill) => void
                 style={{ transition: 'stroke-dasharray 1s ease' }}
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white">
+            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-text-primary">
               {pct}%
             </span>
           </div>
 
           <div className="space-y-1 min-w-0 flex-1">
-            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-surface-light rounded-full overflow-hidden">
               <div
                 className={`h-full ${cls.bg} rounded-full transition-all duration-1000`}
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-text-muted">
               Last updated:{' '}
               {skill.last_updated
                 ? new Date(skill.last_updated).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -199,7 +199,7 @@ export default function SkillTree() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">5-D Skill Tree & Competencies</h1>
-          <p className="text-gray-400">
+          <p className="text-text-primary font-medium">
             Real-time student skill progression map persisted in PostgreSQL. Add or update skills anytime!
           </p>
         </div>
@@ -242,7 +242,7 @@ export default function SkillTree() {
                 <TrendingUp className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-medium">Overall Average</p>
+                <p className="text-xs text-text-muted font-medium">Overall Average</p>
                 <p className="text-2xl font-bold">{avgScore}%</p>
               </div>
             </CardContent>
@@ -253,7 +253,7 @@ export default function SkillTree() {
                 <Network className="w-5 h-5 text-green-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-medium">Active Skills</p>
+                <p className="text-xs text-text-muted font-medium">Active Skills</p>
                 <p className="text-2xl font-bold">{assessed}</p>
               </div>
             </CardContent>
@@ -264,7 +264,7 @@ export default function SkillTree() {
                 <BrainCircuit className="w-5 h-5 text-purple-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-medium">Top Strength</p>
+                <p className="text-xs text-text-muted font-medium">Top Strength</p>
                 <p className="text-base font-bold truncate">
                   {skills.length > 0
                     ? skills.reduce((a, b) => (a.score > b.score ? a : b)).skill_category.split(' ')[0]
@@ -290,10 +290,10 @@ export default function SkillTree() {
           ))}
         </div>
       ) : (
-        <Card className="border-dashed border-white/20 bg-transparent">
+        <Card className="border-dashed border-border bg-transparent">
           <CardContent className="flex flex-col items-center justify-center py-20 text-center gap-6">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full bg-surface-light border border-border flex items-center justify-center">
                 <Network className="w-10 h-10 text-gray-600" />
               </div>
               <div className="absolute -top-1 -right-1 w-7 h-7 bg-primary/20 border border-primary/30 rounded-full flex items-center justify-center">
@@ -301,8 +301,8 @@ export default function SkillTree() {
               </div>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-200">No Skills Mapped Yet</h3>
-              <p className="text-gray-500 mt-2 max-w-sm mx-auto">
+              <h3 className="text-xl font-bold text-text-primary">No Skills Mapped Yet</h3>
+              <p className="text-text-muted mt-2 max-w-sm mx-auto">
                 Add custom skills or take the diagnostic assessment to unlock your personalised Skill Tree.
               </p>
             </div>
@@ -321,18 +321,18 @@ export default function SkillTree() {
 
       {/* ── Add Custom Skill Modal ───────────────────────────────── */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-surface border border-white/10 rounded-2xl p-6 space-y-6 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-6 space-y-6 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-border pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/20 rounded-xl border border-primary/30">
                   <Plus className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="font-bold text-lg text-white">Add Custom Skill</h2>
+                <h2 className="font-bold text-lg text-text-primary">Add Custom Skill</h2>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-text-muted hover:text-text-primary"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -346,11 +346,11 @@ export default function SkillTree() {
                 onChange={(e) => setNewSkillName(e.target.value)}
                 required
               />
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-text-muted">
                 After adding this skill, conduct an assessment to test your knowledge and get graded.
               </p>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
                 <Button
                   type="button"
                   variant="ghost"
@@ -370,21 +370,21 @@ export default function SkillTree() {
 
       {/* ── Edit Skill Score Modal ────────────────────────────────── */}
       {editingSkill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-surface border border-white/10 rounded-2xl p-6 space-y-6 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-6 space-y-6 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-border pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/20 rounded-xl border border-purple-500/30">
                   <Edit3 className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-lg text-white">Update Skill Level</h2>
-                  <p className="text-xs text-gray-400">{editingSkill.skill_category}</p>
+                  <h2 className="font-bold text-lg text-text-primary">Update Skill Level</h2>
+                  <p className="text-xs text-text-muted">{editingSkill.skill_category}</p>
                 </div>
               </div>
               <button
                 onClick={() => setEditingSkill(null)}
-                className="text-gray-400 hover:text-white"
+                className="text-text-muted hover:text-text-primary"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -393,7 +393,7 @@ export default function SkillTree() {
             <form onSubmit={handleUpdateSkill} className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-sm font-medium">
-                  <span className="text-gray-300">Competence Score</span>
+                  <span className="text-text-muted">Competence Score</span>
                   <span className="text-primary font-bold text-lg">{editScore}%</span>
                 </div>
                 <input
@@ -402,11 +402,11 @@ export default function SkillTree() {
                   max="100"
                   value={editScore}
                   onChange={(e) => setEditScore(Number(e.target.value))}
-                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+                  className="w-full h-2 bg-surface-light rounded-lg appearance-none cursor-pointer accent-primary"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
                 <Button
                   type="button"
                   variant="ghost"

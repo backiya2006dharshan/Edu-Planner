@@ -9,6 +9,7 @@ from app.db.database import get_session_factory
 from app.models.user import User
 from app.models.assessment import StudentSkill, DiagnosticAssessment
 from app.models.learning_plan import LearningPlan, LearningModule, LearningTask
+from app.models.classroom import Classroom, ClassMember
 from app.dependencies.auth import require_role
 from app.schemas.teacher import (
     TeacherStatsResponse,
@@ -33,9 +34,14 @@ async def get_teacher_stats(
     current_user: User = Depends(require_role("teacher")),
     db: Session = Depends(get_db)
 ):
-    # Total students count
+    # Total students count scoped to teacher's classrooms
     students = db.execute(
-        select(User).where(User.role == "student")
+        select(User)
+        .join(ClassMember, ClassMember.student_id == User.id)
+        .join(Classroom, ClassMember.class_id == Classroom.id)
+        .where(Classroom.teacher_id == current_user.id)
+        .where(User.role == "student")
+        .distinct()
     ).scalars().all()
     total_students = len(students)
 
@@ -78,8 +84,15 @@ async def get_teacher_students(
     current_user: User = Depends(require_role("teacher")),
     db: Session = Depends(get_db)
 ):
+    # Students list scoped to teacher's classrooms
     students = db.execute(
-        select(User).where(User.role == "student").order_by(User.full_name.asc())
+        select(User)
+        .join(ClassMember, ClassMember.student_id == User.id)
+        .join(Classroom, ClassMember.class_id == Classroom.id)
+        .where(Classroom.teacher_id == current_user.id)
+        .where(User.role == "student")
+        .order_by(User.full_name.asc())
+        .distinct()
     ).scalars().all()
 
     result = []
@@ -123,13 +136,17 @@ async def get_teacher_activity(
 ):
     activities = []
     
-    # Recent completed assessments
+    # Recent completed assessments scoped to teacher's classrooms
     ass_list = db.execute(
         select(DiagnosticAssessment, User)
         .join(User, DiagnosticAssessment.user_id == User.id)
+        .join(ClassMember, ClassMember.student_id == User.id)
+        .join(Classroom, ClassMember.class_id == Classroom.id)
+        .where(Classroom.teacher_id == current_user.id)
         .where(DiagnosticAssessment.is_completed == True)
         .order_by(DiagnosticAssessment.completed_at.desc())
         .limit(5)
+        .distinct()
     ).all()
 
     for ass, user in ass_list:
@@ -140,12 +157,16 @@ async def get_teacher_activity(
                 time=ass.completed_at.isoformat()
             ))
 
-    # Recent generated plans
+    # Recent generated plans scoped to teacher's classrooms
     plan_list = db.execute(
         select(LearningPlan, User)
         .join(User, LearningPlan.user_id == User.id)
+        .join(ClassMember, ClassMember.student_id == User.id)
+        .join(Classroom, ClassMember.class_id == Classroom.id)
+        .where(Classroom.teacher_id == current_user.id)
         .order_by(LearningPlan.created_at.desc())
         .limit(5)
+        .distinct()
     ).all()
 
     for plan, user in plan_list:
@@ -158,3 +179,4 @@ async def get_teacher_activity(
 
     activities.sort(key=lambda a: a.time, reverse=True)
     return activities[:10]
+

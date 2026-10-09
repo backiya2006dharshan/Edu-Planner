@@ -5,9 +5,15 @@ from pydantic import BaseModel, ConfigDict
 class LearningTaskBase(BaseModel):
     title: str
     description: Optional[str] = None
+    objectives: Optional[str] = None
+    skills: Optional[str] = None
+    estimated_time: int = 20
+    difficulty: str = "Beginner"
+    learning_outcome: Optional[str] = None
     task_type: str = "lesson"
     order_index: int = 0
     is_completed: bool = False
+    status: str = "not_started"
 
 class LearningTaskResponse(LearningTaskBase):
     id: int

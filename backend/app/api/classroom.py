@@ -236,17 +236,7 @@ async def get_classroom_overview(
     classroom = _verify_classroom_access(class_id, current_user, db)
 
     # 1. Materials count & recent
-    mat_query = select(MaterialDocument)
-    filters = []
-    if classroom.college:
-        filters.append(MaterialDocument.college == classroom.college)
-    if classroom.semester:
-        filters.append(MaterialDocument.semester == classroom.semester)
-    if classroom.regulation:
-        filters.append(MaterialDocument.regulation == classroom.regulation)
-    
-    if filters:
-        mat_query = mat_query.where(*filters)
+    mat_query = select(MaterialDocument).where(MaterialDocument.class_id == class_id)
     
     materials = db.execute(mat_query.order_by(MaterialDocument.created_at.desc())).scalars().all()
     materials_count = len(materials)
@@ -407,13 +397,7 @@ async def get_classroom_materials(
     classroom = _verify_classroom_access(class_id, current_user, db)
 
     query = select(MaterialDocument)
-    filters = []
-    if classroom.college:
-        filters.append(MaterialDocument.college == classroom.college)
-    if classroom.semester:
-        filters.append(MaterialDocument.semester == classroom.semester)
-    if classroom.regulation:
-        filters.append(MaterialDocument.regulation == classroom.regulation)
+    filters = [MaterialDocument.class_id == class_id]
 
     if search and search.strip():
         filters.append(MaterialDocument.file_name.ilike(f"%{search.strip()}%"))
@@ -833,8 +817,18 @@ async def delete_class(
             detail="You can only delete your own class."
         )
 
+    # Delete materials for this class
+    filters = [MaterialDocument.class_id == classroom.id]
+    
+    materials_to_delete = db.execute(select(MaterialDocument).where(*filters)).scalars().all()
+    
+    # We should delete them using the service to clean up ChromaDB
+    from app.services.material_service import delete_material_document
+    for mat in materials_to_delete:
+        await delete_material_document(mat.id)
+
     db.delete(classroom)
     db.commit()
-    logger.info(f"[Class Deleted] Teacher {current_user.id} deleted Class '{classroom.name}' ({classroom.code})")
+    logger.info(f"[Class Deleted] Teacher {current_user.id} deleted Class '{classroom.name}' ({classroom.code}) along with {len(materials_to_delete)} materials")
     return {"message": "Classroom deleted successfully."}
 

@@ -50,12 +50,15 @@ export const materialsApi = {
     return response.data;
   },
 
-  upload: async (payload: { file: File; college: string; semester: string; regulation: string }): Promise<Material> => {
+  upload: async (payload: { file: File; college: string; semester: string; regulation: string; classId?: number }): Promise<Material> => {
     const formData = new FormData();
     formData.append('file', payload.file);
     formData.append('college', payload.college || 'General');
     formData.append('semester', payload.semester || 'General');
     formData.append('regulation', payload.regulation || 'General');
+    if (payload.classId) {
+      formData.append('class_id', payload.classId.toString());
+    }
     
     const response = await apiClient.post<Material>('/materials', formData, {
       headers: {

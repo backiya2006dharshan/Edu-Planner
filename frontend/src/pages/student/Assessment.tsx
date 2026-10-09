@@ -1,43 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
-import { assessmentApi, Question } from '../../api/assessment';
-import { CheckCircle2, ChevronRight, Brain, AlertCircle, Network } from 'lucide-react';
+import { assessmentApi, Question, MaterialOption, DynamicAssessmentSubmitResponse, GeneratedQuestionsResponse } from '../../api/assessment';
+import { CheckCircle2, ChevronRight, Brain, AlertCircle, FileText, Loader2, Target, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface SkillResult {
-  skill_category: string;
-  score: number;
-}
-
-interface AssessmentResult {
-  message: string;
-  results?: SkillResult[];
-}
 
 export default function Assessment() {
   const navigate = useNavigate();
-  const [assessmentId, setAssessmentId] = useState<number | null>(null);
+  const [materials, setMaterials] = useState<MaterialOption[]>([]);
+  const [sessionInfo, setSessionInfo] = useState<GeneratedQuestionsResponse | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentStep, setCurrentStep] = useState<'intro' | 'questions' | 'results'>('intro');
+  const [currentStep, setCurrentStep] = useState<'materials' | 'questions' | 'results'>('materials');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [results, setResults] = useState<AssessmentResult | null>(null);
+  const [results, setResults] = useState<DynamicAssessmentSubmitResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const startAssessment = async () => {
+  useEffect(() => {
+    loadMaterials();
+  }, []);
+
+  const loadMaterials = async () => {
+    setIsLoading(true);
+    try {
+      const data = await assessmentApi.getMaterials();
+      setMaterials(data);
+    } catch (err) {
+      setError('Failed to load materials.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelectMaterial = async (materialId: number) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await assessmentApi.start();
-      setAssessmentId(response.assessment_id);
-
-      const questionList = await assessmentApi.getQuestions(response.assessment_id);
-      setQuestions(questionList);
+      const data = await assessmentApi.generateQuestions({ material_id: materialId, num_questions: 10 });
+      if (!data.questions || data.questions.length === 0) {
+        setError('No questions could be generated for this material. It might not have enough content or is still processing.');
+        return;
+      }
+      setSessionInfo(data);
+      setQuestions(data.questions);
       setCurrentStep('questions');
-    } catch {
-      setError('Failed to start assessment. Please try again.');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to generate questions. Ensure material is indexed.');
     } finally {
       setIsLoading(false);
     }
@@ -54,18 +63,21 @@ export default function Assessment() {
   };
 
   const handleSubmit = async () => {
-    if (assessmentId === null) return;
+    if (!sessionInfo) return;
     setIsLoading(true);
     setError(null);
     try {
       const answersList = Object.entries(answers).map(([qId, selected]) => ({
         question_id: Number(qId),
-        selected_answer: selected,
+        selected_option: selected,
       }));
-      const res = await assessmentApi.submit(assessmentId, { answers: answersList });
-      setResults(res as AssessmentResult);
+      const res = await assessmentApi.submit({
+        session_id: sessionInfo.session_id,
+        answers: answersList
+      });
+      setResults(res);
       setCurrentStep('results');
-    } catch {
+    } catch (err) {
       setError('Failed to submit assessment.');
     } finally {
       setIsLoading(false);
@@ -76,47 +88,69 @@ export default function Assessment() {
   const isAnswered = currentQuestion && answers[currentQuestion.id] !== undefined;
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
-  /* ── Intro ─────────────────────────────────────────────── */
-  if (currentStep === 'intro') {
+  /* ── Step 1: Materials ─────────────────────────────────────────────── */
+  if (currentStep === 'materials') {
     return (
-      <div className="max-w-2xl mx-auto mt-12">
+      <div className="max-w-4xl mx-auto mt-12">
         <Card>
           <CardHeader className="text-center">
             <div className="mx-auto bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border border-primary/20">
               <Brain className="w-8 h-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl">5-D Knowledge Assessment</CardTitle>
-            <p className="text-gray-400 mt-2">
-              EduPlanner will evaluate your skills across 5 cognitive dimensions to build your
-              personalised learning plan.
+            <CardTitle className="text-2xl">Dynamic Material Assessment</CardTitle>
+            <p className="text-text-muted mt-2">
+              Select a material below to generate a dynamic assessment and personalized learning plan.
             </p>
           </CardHeader>
-          <CardContent className="text-center space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-              {['Numerical Calculation', 'Abstract Thinking', 'Logical Reasoning', 'Association / Analogy', 'Spatial Imagination'].map((dim) => (
-                <div key={dim} className="flex items-center gap-2 p-3 bg-white/5 rounded-xl border border-white/10">
-                  <Network className="w-4 h-4 text-primary shrink-0" />
-                  <span className="text-xs font-medium text-gray-300">{dim}</span>
-                </div>
-              ))}
-            </div>
+          <CardContent className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 p-3 rounded-xl">
+              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 p-3 rounded-xl mb-4">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {error}
               </div>
             )}
-            <Button id="start-assessment-btn" onClick={startAssessment} isLoading={isLoading} size="lg" className="w-full sm:w-auto">
-              Start Assessment
-            </Button>
+            
+            {isLoading && materials.length === 0 ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : materials.length === 0 ? (
+              <p className="text-center text-text-muted py-8">No materials available for your curriculum.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {materials.map((m) => (
+                  <button
+                    key={m.id}
+                    disabled={isLoading}
+                    onClick={() => handleSelectMaterial(m.id)}
+                    className="flex flex-col text-left p-5 rounded-2xl border border-border bg-surface-light hover:bg-surface-light hover:border-primary/50 transition-all group disabled:opacity-50"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-primary/10 rounded-xl group-hover:scale-110 transition-transform">
+                        <FileText className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-text-primary line-clamp-2">{m.file_name}</h4>
+                        <p className="text-sm text-text-muted mt-1">{m.subject}</p>
+                        <div className="flex gap-2 mt-3">
+                          <span className="text-xs px-2 py-1 bg-surface-light rounded-md text-text-muted">
+                            {m.college} • Sem {m.semester}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  /* ── Results ────────────────────────────────────────────── */
-  if (currentStep === 'results') {
+  /* ── Step 3: Results ────────────────────────────────────────────── */
+  if (currentStep === 'results' && results) {
     return (
       <div className="max-w-2xl mx-auto mt-12 space-y-6">
         <Card className="border-primary/30">
@@ -124,40 +158,47 @@ export default function Assessment() {
             <div className="mx-auto bg-green-500/20 w-16 h-16 rounded-full flex items-center justify-center mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-400" />
             </div>
-            <CardTitle className="text-2xl">Assessment Complete 🎉</CardTitle>
-            <p className="text-gray-400 mt-2">Your skill profile has been updated.</p>
+            <CardTitle className="text-3xl font-bold text-text-primary mb-2">
+              {results.score_percent.toFixed(0)}% Score
+            </CardTitle>
+            <p className="text-text-muted">{results.correct_count} out of {results.total_count} correct</p>
           </CardHeader>
           <CardContent className="mt-8 space-y-6">
-            {results?.results && results.results.length > 0 ? (
-              <>
-                <h3 className="text-lg font-semibold">Skills Identified:</h3>
-                <div className="grid gap-3">
-                  {results.results.map((skill, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/10"
-                    >
-                      <span className="font-medium text-gray-200 capitalize">{skill.skill_category}</span>
-                      <div className="flex items-center gap-4">
-                        <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden hidden sm:block">
-                          <div className="h-full bg-primary" style={{ width: `${skill.score * 100}%` }} />
-                        </div>
-                        <span className="font-bold">{(skill.score * 100).toFixed(0)}%</span>
+            <div className="bg-surface-light border border-border p-4 rounded-xl">
+              <p className="text-center text-text-primary flex items-center justify-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-400" />
+                {results.message}
+              </p>
+              <p className="text-center text-sm text-text-muted mt-2">{results.learning_plan_summary}</p>
+            </div>
+
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              Skill Breakdown
+            </h3>
+            
+            <div className="grid gap-3">
+              {Object.entries(results.skill_performance).map(([skill, score]) => {
+                const isStrong = score >= 70;
+                return (
+                  <div key={skill} className={`flex justify-between items-center p-4 rounded-xl border ${isStrong ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                    <span className="font-medium text-text-primary capitalize">{skill}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="w-32 h-2 bg-surface-light rounded-full overflow-hidden hidden sm:block">
+                        <div className={`h-full ${isStrong ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${score}%` }} />
                       </div>
+                      <span className={`font-bold ${isStrong ? 'text-green-400' : 'text-red-400'}`}>
+                        {score.toFixed(0)}%
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className="text-gray-400 text-center">{results?.message ?? 'Assessment submitted successfully.'}</p>
-            )}
-            <div className="flex gap-3 justify-center pt-2">
-              <Button variant="outline" onClick={() => navigate('/student/skill-tree')}>
-                <Network className="w-4 h-4 mr-2" />
-                View Skill Tree
-              </Button>
-              <Button onClick={() => navigate('/student/dashboard')}>
-                Go to Dashboard
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-3 justify-center pt-6">
+              <Button onClick={() => navigate('/student/dashboard')} size="lg" className="w-full sm:w-auto">
+                View My Learning Plan
               </Button>
             </div>
           </CardContent>
@@ -166,32 +207,31 @@ export default function Assessment() {
     );
   }
 
-  /* ── Questions ──────────────────────────────────────────── */
+  /* ── Step 2: Questions ──────────────────────────────────────────── */
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
     <div className="max-w-3xl mx-auto mt-8">
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold text-text-primary">{sessionInfo?.topic}</h2>
+          <p className="text-sm text-text-muted">{sessionInfo?.subject}</p>
+        </div>
+      </div>
+      
       <div className="mb-8 flex items-center gap-4">
-        <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+        <div className="flex-1 h-2 bg-surface-light rounded-full overflow-hidden">
           <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
         </div>
-        <span className="text-sm font-medium text-gray-400 shrink-0">
+        <span className="text-sm font-medium text-text-muted shrink-0">
           {currentQuestionIndex + 1} / {questions.length}
         </span>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-              {currentQuestion?.skill_category}
-            </span>
-            <span className="text-xs text-gray-500">
-              Difficulty: {currentQuestion?.difficulty}
-            </span>
-          </div>
-          <CardTitle className="text-xl leading-relaxed">
-            {currentQuestion?.text}
+          <CardTitle className="text-xl leading-relaxed text-text-primary">
+            {currentQuestion?.question_text}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -205,8 +245,8 @@ export default function Assessment() {
                   onClick={() => handleSelectOption(currentQuestion.id, option)}
                   className={`w-full text-left p-4 rounded-xl border transition-all ${
                     isSelected
-                      ? 'bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]'
-                      : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                      ? 'bg-primary/20 border-primary/50 text-text-primary shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                      : 'bg-surface-light border-border text-text-muted hover:bg-surface-light'
                   }`}
                 >
                   {option}

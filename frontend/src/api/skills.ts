@@ -10,7 +10,7 @@ export interface SkillScores {
 
 export const skillsApi = {
   getSkills: async (): Promise<SkillScores> => {
-    const response = await apiClient.get('/skills/');
+    const response = await apiClient.get('/assessment/skills');
     return response.data;
   },
 };

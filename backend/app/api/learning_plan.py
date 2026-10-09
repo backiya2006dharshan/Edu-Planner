@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.db.database import get_session_factory
 from app.ai.providers import get_llm_provider
@@ -98,6 +98,36 @@ async def get_learning_plan(
     return plan
 
 
+@router.patch("/tasks/{task_id}/start", response_model=LearningTaskResponse)
+async def start_task(
+    task_id: int,
+    current_user: User = Depends(require_role("student")),
+    db: Session = Depends(get_db)
+):
+    """
+    Mark a learning task as in_progress.
+    """
+    task = db.execute(
+        select(LearningTask)
+        .join(LearningModule, LearningTask.module_id == LearningModule.id)
+        .join(LearningPlan, LearningModule.learning_plan_id == LearningPlan.id)
+        .where(LearningTask.id == task_id)
+        .where(LearningPlan.user_id == current_user.id)
+    ).scalars().first()
+    
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found or not authorized."
+        )
+        
+    task.status = "in_progress"
+    db.commit()
+    db.refresh(task)
+    
+    return task
+
+
 @router.patch("/tasks/{task_id}/complete", response_model=LearningTaskResponse)
 async def complete_task(
     task_id: int,
@@ -123,6 +153,7 @@ async def complete_task(
         )
         
     task.is_completed = True
+    task.status = "completed"
     db.commit()
     db.refresh(task)
     
@@ -327,7 +358,20 @@ async def submit_verification_test(
         db.commit()
         msg = "Congratulations! You passed the 5-MCQ verification test. Learning plan marked as COMPLETED! 🎉"
     else:
-        msg = f"You scored {score_percent:.0f}%. You need at least 60% (3/5 correct) to verify completion. Please review the topics and try again!"
+        # Bulk-reset all tasks belonging to this plan directly via subquery.
+        # Using a direct UPDATE avoids lazy-loading issues with plan.modules.
+        module_ids_subquery = (
+            select(LearningModule.id)
+            .where(LearningModule.learning_plan_id == plan_id)
+            .scalar_subquery()
+        )
+        db.execute(
+            update(LearningTask)
+            .where(LearningTask.module_id.in_(module_ids_subquery))
+            .values(is_completed=False, status="not_started")
+        )
+        db.commit()
+        msg = f"You scored {score_percent:.0f}%. You need at least 60% (3/5 correct) to verify completion. Your tasks have been restored so you can review them and try again!"
 
     return VerificationResultResponse(
         passed=passed,

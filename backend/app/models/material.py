@@ -20,9 +20,13 @@ class MaterialDocument(Base):
     content_hash = mapped_column(String(64), nullable=False, unique=True, index=True)
     embedding_model = mapped_column(String(255), nullable=False)
     chunk_count = mapped_column(Integer, nullable=False, default=0)
+    uploader_id = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    class_id = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=True, index=True)
     created_at = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+    uploader = relationship("User", foreign_keys=[uploader_id])
+    classroom = relationship("Classroom")
     chunks = relationship("MaterialChunk", back_populates="document", cascade="all, delete-orphan")
 
 
@@ -30,7 +34,7 @@ class MaterialChunk(Base):
     __tablename__ = "material_chunks"
     __table_args__ = (
         Index("uq_material_chunks_document_index", "document_id", "chunk_index", unique=True),
-        Index("ix_material_chunks_filter_scope", "college", "semester", "regulation"),
+        Index("ix_material_chunks_filter_scope", "college", "semester", "regulation", "class_id"),
     )
 
     id = mapped_column(Integer, primary_key=True, index=True)
@@ -42,6 +46,7 @@ class MaterialChunk(Base):
     college = mapped_column(String(255), nullable=False, index=True)
     semester = mapped_column(String(50), nullable=False, index=True)
     regulation = mapped_column(String(100), nullable=False, index=True)
+    class_id = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=True, index=True)
     created_at = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     document = relationship("MaterialDocument", back_populates="chunks")
